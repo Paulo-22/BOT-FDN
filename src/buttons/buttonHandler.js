@@ -158,48 +158,115 @@ async function mostrarUserSelect(interaction, acao, titulo, placeholder) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// COOLDOWN — evita double-click nos botões do bate-ponto
+// ─────────────────────────────────────────────────────────────────────────────
+
+const cooldowns = new Map(); // userId → timestamp do último clique
+
+function emCooldown(userId, segundos = 5) {
+  const agora = Date.now();
+  const ultimo = cooldowns.get(userId) || 0;
+  if (agora - ultimo < segundos * 1000) return true;
+  cooldowns.set(userId, agora);
+  return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // BATE-PONTO
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function handleLigar(interaction) {
-  await horasService.iniciarPonto(interaction.user.id);
+  // ── Cooldown ────────────────────────────────────────────────────────────────
+  if (emCooldown(interaction.user.id)) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder().setColor(config.cores.aviso)
+        .setDescription('⏳ Aguarde alguns segundos antes de tentar novamente.')],
+      ephemeral: true,
+    });
+  }
+
+  // ── Verificar se está em canal de voz ───────────────────────────────────────
+  const canal = interaction.member.voice?.channel;
+  if (!canal) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder().setColor(config.cores.erro)
+        .setDescription('❌ Você precisa estar em um **canal de voz** para iniciar o ponto.')],
+      ephemeral: true,
+    });
+  }
+
+  // ── Verificar ponto duplo e iniciar ─────────────────────────────────────────
+  const resultado = await horasService.iniciarPonto(interaction.user.id, canal.id);
+  if (resultado.erro) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder().setColor(config.cores.aviso)
+        .setDescription(`⚠️ ${resultado.erro}`)],
+      ephemeral: true,
+    });
+  }
+
+  await logger.logBatePonto(interaction.client, { usuario: interaction.user.id }, 'LIGAR');
+
   return interaction.reply({
     embeds: [
       new EmbedBuilder()
-        .setColor('#22C55E')
+        .setColor(config.cores.sucesso)
+        .setTitle('PONTO INICIADO')
         .setDescription(
-          `☑️ **Ponto iniciado às <t:${Math.floor(Date.now() / 1000)}:T>**\n\n` +
-          '• Ele será finalizado ao sair do canal de voz.\n' +
-          '• Também pode ser encerrado manualmente pelo botão **DESLIGAR**.'
+          `🟢 **MEMBRO:** ${interaction.user}\n` +
+          `🟢 **CANAL:** ${canal.name}\n` +
+          `🟢 **INÍCIO:** <t:${Math.floor(Date.now() / 1000)}:T>\n\n` +
+          '• O ponto será finalizado ao sair do canal de voz.\n' +
+          '• Pode ser encerrado manualmente pelo botão **DESLIGAR**.'
         )
         .setFooter({ text: 'FDN • Sistema de Controle de Ponto' })
-        .setTimestamp()
+        .setTimestamp(),
     ],
     ephemeral: true,
   });
 }
 
 async function handleDesligar(interaction) {
-  const resultado = await horasService.finalizarPonto(interaction.user.id);
-  if (!resultado) {
-    return interaction.reply({ content: '❌ Você não possui um ponto ativo.', ephemeral: true });
+  // ── Cooldown ────────────────────────────────────────────────────────────────
+  if (emCooldown(interaction.user.id)) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder().setColor(config.cores.aviso)
+        .setDescription('⏳ Aguarde alguns segundos antes de tentar novamente.')],
+      ephemeral: true,
+    });
   }
+
+  // ── Encerrar ponto ──────────────────────────────────────────────────────────
+  const resultado = await horasService.encerrarPonto(interaction.user.id);
+  if (resultado.erro) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder().setColor(config.cores.aviso)
+        .setDescription(`⚠️ ${resultado.erro}`)],
+      ephemeral: true,
+    });
+  }
+
+  await logger.logBatePonto(interaction.client, {
+    usuario:     interaction.user.id,
+    inicio:      resultado.hora.inicio,
+    tempo_total: resultado.tempoTotal,
+    automatico:  false,
+  }, 'DESLIGAR');
+
   return interaction.reply({
     embeds: [
       new EmbedBuilder()
-        .setColor('#EF4444')
-        .setTitle('✅ PONTO FINALIZADO')
+        .setColor(config.cores.neutro)
+        .setTitle('PONTO FINALIZADO')
         .setDescription(
-          `🔴 Seu ponto foi encerrado com sucesso.\n\n` +
-          `⏱️ **Tempo Registrado**\n` +
-          `\`${logger.formatarTempo(resultado.tempoTotal)}\``
-        )
-        .addFields(
-          { name: '👤 Membro', value: `${interaction.user}`, inline: true },
-          { name: '📅 Data',   value: `<t:${Math.floor(Date.now() / 1000)}:d>`, inline: true }
+          `🟢 **MEMBRO:** ${interaction.user}\n` +
+          `🟢 **INÍCIO:** <t:${Math.floor(new Date(resultado.hora.inicio).getTime() / 1000)}:T>\n` +
+          `🟢 **TÉRMINO:** <t:${Math.floor(Date.now() / 1000)}:T>\n` +
+          `🟢 **TOTAL:** ${logger.formatarTempo(resultado.tempoTotal)}\n` +
+          `🟢 **MOTIVO:** Encerrou manualmente.`
         )
         .setFooter({ text: 'FDN • Sistema de Controle de Ponto' })
-        .setTimestamp()
+        .setTimestamp(),
     ],
     ephemeral: true,
   });
