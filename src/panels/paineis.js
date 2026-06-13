@@ -71,24 +71,49 @@ function painelBatePonto() {
   const embed = new EmbedBuilder()
     .setColor(config.cores.principal)
     .setDescription(
-      '• **BATE-PONTO | FDN**\n\n' +
-      'Para iniciar um registro de ponto o membro deverá entrar em qualquer canal ' +
-      'de voz autorizado e clicar no botão **\'LIGAR\'** localizado abaixo.\n\n' +
-      'Para finalizar o registro, o membro deve permanecer no canal de voz e utilizar ' +
-      'o botão **\'DESLIGAR\'** para que o ponto seja contabilizado. Caso o membro saia ' +
-      'do canal de voz sem utilizar o comando o ponto é finalizado automaticamente.\n\n' +
-      'Para verificar o total de horas registradas, basta clicar no botão **\'HORAS\'**.'
+      '## 📋 BATE-PONTO | FDN\n\n' +
+      '> 🟢 Clique em **LIGAR** para iniciar seu serviço.\n' +
+      '> 🔴 Clique em **DESLIGAR** para encerrar seu serviço.\n' +
+      '> 📊 Consulte suas horas registradas.\n' +
+      '> 🏆 Visualize o ranking dos membros.\n\n' +
+      '> ⚠️ Ao sair do canal de voz o ponto será encerrado automaticamente.'
     )
-    .setImage(BANNER_FDN);
+    .setImage(BANNER_FDN)
+    .setFooter({
+      text: 'FDN • Sistema de Controle de Ponto'
+    })
+    .setTimestamp();
 
   const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('btn_ligar').setLabel('LIGAR').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('btn_desligar').setLabel('DESLIGAR').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('btn_minhas_horas').setLabel('HORAS').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('btn_ranking').setLabel('RANKING').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('btn_ligar')
+      .setLabel('LIGAR')
+      .setEmoji('🟢')
+      .setStyle(ButtonStyle.Success),
+
+    new ButtonBuilder()
+      .setCustomId('btn_desligar')
+      .setLabel('DESLIGAR')
+      .setEmoji('🔴')
+      .setStyle(ButtonStyle.Danger),
+
+    new ButtonBuilder()
+      .setCustomId('btn_minhas_horas')
+      .setLabel('HORAS')
+      .setEmoji('📊')
+      .setStyle(ButtonStyle.Secondary),
+
+    new ButtonBuilder()
+      .setCustomId('btn_ranking')
+      .setLabel('RANKING')
+      .setEmoji('🏆')
+      .setStyle(ButtonStyle.Secondary)
   );
 
-  return { embeds: [embed], components: [row] };
+  return {
+    embeds: [embed],
+    components: [row]
+  };
 }
 
 // ─────────────────────────────────────────────

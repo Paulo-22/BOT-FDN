@@ -14,6 +14,7 @@ model Usuario {
   discord_id    String   @unique
   discord_nome  String
   nome_mta      String
+  login         String
   id_gamer      String   @unique
   telefone      String?
   cargo         String   @default("Sem Cargo")

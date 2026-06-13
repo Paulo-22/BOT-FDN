@@ -77,13 +77,13 @@ module.exports = {
   // ============================================
   // CORES
   // ============================================
-  cores: {
-    principal: 0x1a1a2e,
-    sucesso:   0x00b894,
-    erro:      0xe17055,
-    aviso:     0xfdcb6e,
-    info:      0x74b9ff,
-    neutro:    0x636e72,
-    gold:      0xf9ca24,
-  },
+cores: {
+  principal: 0xDC2626,
+  sucesso: 0x22C55E,
+  erro: 0xEF4444,
+  aviso: 0xF59E0B,
+  info: 0x3B82F6,
+  neutro: 0x6B7280,
+  gold: 0xFBBF24
+}
 };

@@ -79,9 +79,9 @@ async function handleModal(interaction) {
 
 async function handleRegistro(interaction) {
   const { user } = interaction;
-  const nome_mta = interaction.fields.getTextInputValue('nome_mta').trim();
-  const id_gamer = interaction.fields.getTextInputValue('id_gamer').trim();
-  const telefone = interaction.fields.getTextInputValue('telefone')?.trim() || null;
+const nome_mta = interaction.fields.getTextInputValue('nome_mta').trim();
+const login = interaction.fields.getTextInputValue('login').trim();
+const id_gamer = interaction.fields.getTextInputValue('id_gamer').trim();
 
   const existente = await prisma.usuario.findFirst({
     where: { OR: [{ discord_id: user.id }, { id_gamer }] },

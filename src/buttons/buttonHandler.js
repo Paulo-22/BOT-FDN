@@ -157,97 +157,99 @@ async function mostrarUserSelect(interaction, acao, titulo, placeholder) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BATE-PONTO
-// ─────────────────────────────────────────────────────────────────────────────
+return interaction.reply({
+embeds: [
+new EmbedBuilder()
+.setColor('#22C55E')
+.setDescription(
+`☑️ **Ponto iniciado às <t:${Math.floor(Date.now() / 1000)}:T>**\n\n` +
+'• Ele será finalizado ao sair do canal de voz.\n' +
+'• Também pode ser encerrado manualmente pelo botão **DESLIGAR**.'
+)
+.setFooter({
+text: 'FDN • Sistema de Controle de Ponto'
+})
+.setTimestamp()
+],
+ephemeral: true,
+});
 
-async function handleLigar(interaction) {
-  const { member, user } = interaction;
-  const canalVoz = member.voice.channelId;
 
-  if (!canalVoz || !config.canais.voiceAutorizados.includes(canalVoz)) {
-    return interaction.reply({
-      embeds: [
-        new EmbedBuilder()
-          .setColor(config.cores.erro)
-          .setTitle('❌ Canal não autorizado')
-          .setDescription('Você precisa estar em um **canal de voz autorizado** para iniciar o ponto.'),
-      ],
-      ephemeral: true,
-    });
-  }
-
-  const resultado = await horasService.iniciarPonto(user.id, canalVoz);
-  if (resultado.erro) {
-    return interaction.reply({
-      embeds: [new EmbedBuilder().setColor(config.cores.aviso).setDescription(`⚠️ ${resultado.erro}`)],
-      ephemeral: true,
-    });
-  }
-
-  await logger.logBatePonto(interaction.client, { usuario: user.id }, 'LIGAR');
-
-  return interaction.reply({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(config.cores.sucesso)
-        .setTitle('🟢 Ponto Iniciado!')
-        .addFields(
-          { name: '📌 Canal', value: `<#${canalVoz}>`, inline: true },
-          { name: '🕐 Início', value: `<t:${Math.floor(Date.now() / 1000)}:T>`, inline: true },
-        )
-        .setFooter({ text: 'FDN — Bate-Ponto' })
-        .setTimestamp(),
-    ],
-    ephemeral: true,
-  });
-}
-
-async function handleDesligar(interaction) {
-  const resultado = await horasService.encerrarPonto(interaction.user.id);
-  if (resultado.erro) {
-    return interaction.reply({
-      embeds: [new EmbedBuilder().setColor(config.cores.aviso).setDescription(`⚠️ ${resultado.erro}`)],
-      ephemeral: true,
-    });
-  }
-
-  await logger.logBatePonto(
-    interaction.client,
-    { usuario: interaction.user.id, tempo_total: resultado.tempoTotal, inicio: resultado.hora.inicio, automatico: false },
-    'DESLIGAR',
-  );
-
-  return interaction.reply({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(config.cores.neutro)
-        .setTitle('🔴 Ponto Encerrado')
-        .addFields({ name: '⏱️ Tempo registrado', value: `**${logger.formatarTempo(resultado.tempoTotal)}**`, inline: true })
-        .setFooter({ text: 'FDN — Bate-Ponto' })
-        .setTimestamp(),
-    ],
-    ephemeral: true,
-  });
-}
+return interaction.reply({
+  embeds: [
+    new EmbedBuilder()
+      .setColor('#EF4444')
+      .setTitle('✅ PONTO FINALIZADO')
+      .setDescription(
+        `🔴 Seu ponto foi encerrado com sucesso.\n\n` +
+        `⏱️ **Tempo Registrado**\n` +
+        `\`${logger.formatarTempo(resultado.tempoTotal)}\``
+      )
+      .addFields(
+        {
+          name: '👤 Membro',
+          value: `${interaction.user}`,
+          inline: true
+        },
+        {
+          name: '📅 Data',
+          value: `<t:${Math.floor(Date.now() / 1000)}:d>`,
+          inline: true
+        }
+      )
+      .setFooter({
+        text: 'FDN • Sistema de Controle de Ponto'
+      })
+      .setTimestamp()
+  ],
+  ephemeral: true,
+});
 
 async function handleMinhasHoras(interaction) {
   const stats = await horasService.getEstatisticas(interaction.user.id);
+
   return interaction.reply({
     embeds: [
       new EmbedBuilder()
-        .setColor(config.cores.info)
-        .setTitle('📊 Suas Horas — FDN')
-        .addFields(
-          { name: '📅 Hoje',   value: logger.formatarTempo(stats.hoje),   inline: true },
-          { name: '📆 Semana', value: logger.formatarTempo(stats.semana), inline: true },
-          { name: '🗓️ Mês',   value: logger.formatarTempo(stats.mes),    inline: true },
-          { name: '🏆 Total',  value: logger.formatarTempo(stats.total),  inline: true },
+        .setColor('#3B82F6')
+        .setTitle('📊 RELATÓRIO DE HORAS')
+        .setDescription(
+          `👤 **Membro:** ${interaction.user}\n\n` +
+          'Confira abaixo suas estatísticas de atividade.'
         )
-        .setFooter({ text: 'FDN — Bate-Ponto' })
-        .setTimestamp(),
+        .addFields(
+          {
+            name: '📅 Hoje',
+            value: `\`${logger.formatarTempo(stats.hoje)}\``,
+            inline: true
+          },
+          {
+            name: '📆 Semana',
+            value: `\`${logger.formatarTempo(stats.semana)}\``,
+            inline: true
+          },
+          {
+            name: '🗓️ Mês',
+            value: `\`${logger.formatarTempo(stats.mes)}\``,
+            inline: true
+          },
+          {
+            name: '━━━━━━━━━━━━━━',
+            value: '\u200B',
+            inline: false
+          },
+          {
+            name: '🏆 TOTAL GERAL',
+            value: `\`${logger.formatarTempo(stats.total)}\``,
+            inline: false
+          }
+        )
+        .setFooter({
+          text: 'FDN • Estatísticas de Ponto'
+        })
+        .setTimestamp()
     ],
-    ephemeral: true,
+    ephemeral: true
   });
 }
 
@@ -267,26 +269,49 @@ async function handleRanking(interaction) {
   ]);
 
   const medalhas = ['🥇', '🥈', '🥉'];
-  const fmt = arr =>
-    arr.length
-      ? arr.map((r, i) => `${medalhas[i] || `**${i + 1}.**`} <@${r.usuario}> — \`${logger.formatarTempo(r.total)}\``).join('\n')
-      : '_Nenhum registro_';
+const fmt = arr =>
+  arr.length
+    ? arr
+        .map((r, i) => {
+          const posicao =
+            i === 0 ? '🥇' :
+            i === 1 ? '🥈' :
+            i === 2 ? '🥉' :
+            `🏅`;
+
+          return `${posicao} <@${r.usuario}> • \`${logger.formatarTempo(r.total)}\``;
+        })
+        .join('\n')
+    : '_Nenhum registro encontrado._';
 
   return interaction.editReply({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(config.cores.gold)
-        .setTitle('🏆 Ranking FDN')
-        .addFields(
-          { name: '📊 Ranking Geral',   value: fmt(geral) },
-          { name: '📆 Ranking Semanal', value: fmt(semanal) },
-          { name: '🗓️ Ranking Mensal',  value: fmt(mensal) },
-        )
-        .setFooter({ text: 'FDN — Bate-Ponto' })
-        .setTimestamp(),
-    ],
-  });
-}
+  embeds: [
+    new EmbedBuilder()
+      .setColor('#FBBF24')
+      .setTitle('🏆 TOP MEMBROS FDN')
+      .setDescription(
+        'Confira abaixo os membros mais ativos da facção.\n'
+      )
+      .addFields(
+        {
+          name: '🥇 RANKING GERAL',
+          value: fmt(geral)
+        },
+        {
+          name: '📆 RANKING SEMANAL',
+          value: fmt(semanal)
+        },
+        {
+          name: '🗓️ RANKING MENSAL',
+          value: fmt(mensal)
+        }
+      )
+      .setFooter({
+        text: 'FDN • Estatísticas da Facção'
+      })
+      .setTimestamp()
+  ]
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CANDIDATURA
@@ -550,4 +575,4 @@ async function handleHistorico(interaction) {
   });
 }
 
-module.exports = { handleButton };
+module.exports = { handleButton };}

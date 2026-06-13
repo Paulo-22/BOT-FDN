@@ -10,9 +10,9 @@ function modalRegistro() {
     .setCustomId('modal_registro')
     .setTitle('📋 Registro — FDN')
     .addComponents(
-      row(input('nome_mta', 'Nome no MTA (Roleplay)', TextInputStyle.Short, true, 50)),
-      row(input('id_gamer', 'ID de jogador no MTA', TextInputStyle.Short, true, 10)),
-      row(input('telefone', 'Telefone in-game (opcional)', TextInputStyle.Short, false, 20)),
+      row(input('nome_mta', 'Nome RP', TextInputStyle.Short, true, 50)),
+      row(input('login', 'Login do jogo', TextInputStyle.Short, true, 30)),
+      row(input('id_gamer', 'ID do jogador', TextInputStyle.Short, true, 10)),
     );
 }
 
