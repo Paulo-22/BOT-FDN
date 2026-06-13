@@ -4,29 +4,17 @@
 const { EmbedBuilder } = require('discord.js');
 const config = require('../config');
 
-/**
- * Envia um log para o canal correspondente
- * @param {Client} client - O cliente Discord
- * @param {string} tipo - Tipo do log (registro, recrutamento, etc.)
- * @param {EmbedBuilder} embed - O embed a ser enviado
- */
 async function enviarLog(client, tipo, embed) {
   try {
     const canalId = config.canais.logs[tipo];
-    if (!canalId || canalId.startsWith('ID_')) return; // Canal não configurado
-
+    if (!canalId || canalId.startsWith('ID_')) return;
     const canal = await client.channels.fetch(canalId).catch(() => null);
     if (!canal) return;
-
     await canal.send({ embeds: [embed] });
   } catch (err) {
     console.error(`[LOG ERROR] Falha ao enviar log (${tipo}):`, err.message);
   }
 }
-
-// ============================================================
-// FUNÇÕES DE LOG POR MÓDULO
-// ============================================================
 
 async function logRegistro(client, usuario) {
   const embed = new EmbedBuilder()
@@ -39,7 +27,7 @@ async function logRegistro(client, usuario) {
       { name: 'Telefone', value: usuario.telefone || 'Não informado', inline: true },
     )
     .setTimestamp()
-    .setFooter({ text: 'FDN - Sistema de Registro' });
+    .setFooter({ text: 'FDN — Sistema de Registro' });
 
   await enviarLog(client, 'registro', embed);
 }
@@ -58,7 +46,7 @@ async function logRecrutamento(client, candidatura, acao, responsavel) {
       { name: 'Responsável', value: `<@${responsavel}>`, inline: true },
     )
     .setTimestamp()
-    .setFooter({ text: 'FDN - Sistema de Recrutamento' });
+    .setFooter({ text: 'FDN — Sistema de Recrutamento' });
 
   await enviarLog(client, 'recrutamento', embed);
 }
@@ -75,7 +63,7 @@ async function logPromocao(client, dados) {
       { name: 'Responsável', value: `<@${dados.responsavel}>`, inline: true },
     )
     .setTimestamp()
-    .setFooter({ text: 'FDN - Sistema de Promoções' });
+    .setFooter({ text: 'FDN — Sistema de Promoções' });
 
   await enviarLog(client, 'promocoes', embed);
 }
@@ -92,7 +80,7 @@ async function logRebaixamento(client, dados) {
       { name: 'Responsável', value: `<@${dados.responsavel}>`, inline: true },
     )
     .setTimestamp()
-    .setFooter({ text: 'FDN - Sistema de Rebaixamentos' });
+    .setFooter({ text: 'FDN — Sistema de Rebaixamentos' });
 
   await enviarLog(client, 'rebaixamentos', embed);
 }
@@ -107,7 +95,7 @@ async function logAdvertencia(client, dados) {
       { name: 'Responsável', value: `<@${dados.responsavel}>`, inline: true },
     )
     .setTimestamp()
-    .setFooter({ text: 'FDN - Sistema de Advertências' });
+    .setFooter({ text: 'FDN — Sistema de Advertências' });
 
   await enviarLog(client, 'advertencias', embed);
 }
@@ -122,7 +110,7 @@ async function logExoneracao(client, dados) {
       { name: 'Responsável', value: `<@${dados.responsavel}>`, inline: true },
     )
     .setTimestamp()
-    .setFooter({ text: 'FDN - Sistema de Exonerações' });
+    .setFooter({ text: 'FDN — Sistema de Exonerações' });
 
   await enviarLog(client, 'exoneracoes', embed);
 }
@@ -141,7 +129,7 @@ async function logAusencia(client, ausencia, acao, responsavel) {
       { name: 'Motivo', value: ausencia.motivo },
     )
     .setTimestamp()
-    .setFooter({ text: 'FDN - Sistema de Ausências' });
+    .setFooter({ text: 'FDN — Sistema de Ausências' });
 
   if (responsavel) embed.addFields({ name: 'Responsável', value: `<@${responsavel}>`, inline: true });
 
@@ -158,37 +146,36 @@ async function logTicket(client, ticket, acao) {
       { name: 'Canal', value: `<#${ticket.canal_id}>`, inline: true },
     )
     .setTimestamp()
-    .setFooter({ text: 'FDN - Sistema de Tickets' });
+    .setFooter({ text: 'FDN — Sistema de Tickets' });
 
   await enviarLog(client, 'tickets', embed);
 }
 
 async function logBatePonto(client, dados, acao) {
   const iniciado = acao === 'LIGAR';
-  const agora = new Date();
+  const agora = Math.floor(Date.now() / 1000);
+  const verde = '<:iconeverde:1515370893998555257>';
 
   let descricao = '';
 
   if (iniciado) {
     descricao =
-      `🟢 **MEMBRO:** <@${dados.usuario}>\n` +
-      `🟢 **INÍCIO:** ${agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      `${verde} **MEMBRO:** <@${dados.usuario}>\n` +
+      `${verde} **INÍCIO:** <t:${agora}:t>`;
   } else {
-    const inicio = dados.inicio ? new Date(dados.inicio) : null;
-    const fmtInicio = inicio
-      ? inicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      : '--:--';
-    const fmtFim = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const tsInicio = dados.inicio
+      ? Math.floor(new Date(dados.inicio).getTime() / 1000)
+      : agora;
     const total = dados.tempo_total ? formatarTempo(dados.tempo_total) : '00:00';
     const motivo = dados.automatico
       ? '• O ponto foi fechado automaticamente, o membro saiu da call.'
       : '• O membro encerrou o ponto manualmente.';
 
     descricao =
-      `🟢 **MEMBRO:** <@${dados.usuario}>\n` +
-      `🟢 **INÍCIO:** ${fmtInicio}\n` +
-      `🟢 **TÉRMINO:** ${fmtFim}\n` +
-      `🟢 **TOTAL:** ${total}\n` +
+      `${verde} **MEMBRO:** <@${dados.usuario}>\n` +
+      `${verde} **INÍCIO:** <t:${tsInicio}:t>\n` +
+      `${verde} **TÉRMINO:** <t:${agora}:t>\n` +
+      `${verde} **TOTAL:** ${total}\n` +
       `${motivo}`;
   }
 
@@ -201,8 +188,6 @@ async function logBatePonto(client, dados, acao) {
   await enviarLog(client, 'batePonto', embed);
 }
 
-
-// Formata segundos em hh:mm:ss
 function formatarTempo(segundos) {
   const h = Math.floor(segundos / 3600);
   const m = Math.floor((segundos % 3600) / 60);
