@@ -164,18 +164,22 @@ async function logTicket(client, ticket, acao) {
 }
 
 async function logBatePonto(client, dados, acao) {
+  const iniciado = acao === 'LIGAR';
+
   const embed = new EmbedBuilder()
-    .setColor(acao === 'LIGAR' ? config.cores.sucesso : config.cores.neutro)
-    .setTitle(`${acao === 'LIGAR' ? '🟢' : '🔴'} Ponto ${acao === 'LIGAR' ? 'Iniciado' : 'Encerrado'}`)
+    .setColor(iniciado ? config.cores.sucesso : config.cores.erro)
+    .setTitle(iniciado ? '🟢 Ponto Iniciado' : '🔴 Ponto Encerrado')
     .addFields(
-      { name: 'Membro', value: `<@${dados.usuario}>`, inline: true },
+      { name: 'Membro', value: `<@${dados.usuario}>`, inline: iniciado },
     );
 
-  if (acao === 'DESLIGAR' && dados.tempo_total) {
-    embed.addFields({ name: 'Tempo', value: formatarTempo(dados.tempo_total), inline: true });
+  if (!iniciado && dados.tempo_total !== undefined) {
+    embed.addFields({ name: 'Tempo', value: `\`${formatarTempo(dados.tempo_total)}\``, inline: true });
   }
 
-  embed.setTimestamp().setFooter({ text: 'FDN - Bate-Ponto' });
+  embed
+    .setFooter({ text: 'FDN — Bate-Ponto' })
+    .setTimestamp();
 
   await enviarLog(client, 'batePonto', embed);
 }
