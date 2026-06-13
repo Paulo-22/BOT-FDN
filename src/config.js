@@ -9,20 +9,20 @@ module.exports = {
   cargos: {
     // Cargos que podem acessar comandos administrativos
     admin:          '1515212078137479268',
-    lider:          '1265868312504696833',
-    subLider:       '1265868313662197851',
-    coordenador:    '1265868318548557894',
+    lider:          '1265868309467762729',
+    subLider:       '1265868312504696833',
+    coordenador:    '1265868313662197851',
 
     // Hierarquia da facção (ordem crescente)
     hierarquia: [
-      { nome: 'Recruta',      id: '1265868327239024803' },
-      { nome: 'Membro',       id: '1265868325662101605' },
-      { nome: 'Veterano',     id: '1265868325033082901' },
-      { nome: 'Elite',        id: '1265868320725270581' },
-      { nome: 'Oficial',      id: '1265868319890608330' },
-      { nome: 'Coordenador',  id: '1265868318548557894' },
-      { nome: 'Sub-Líder',    id: '1265868313662197851' },
-      { nome: 'Líder',        id: '1265868312504696833' },
+      { nome: 'Recruta',      id: '1265868360613101658' },
+      { nome: 'Membro',       id: '1265868359682228317' },
+      { nome: 'Veterano',     id: '1265868320725270581' },
+      { nome: 'Elite',        id: '1265868319890608330' },
+      { nome: 'Oficial',      id: '1265868318548557894' },
+      { nome: 'Coordenador',  id: '1265868313662197851' },
+      { nome: 'Sub-Líder',    id: '1265868312504696833' },
+      { nome: 'Líder',        id: '1265868309467762729' },
     ],
 
     // Cargo especial
@@ -30,14 +30,14 @@ module.exports = {
     semCargo:  '1265868402178920559',
 
     // Cargos com permissão para cada ação
-    podePRomover:    ['1265868312504696833', '1265868313662197851', 's'],
-    podeRebaixar:    ['1265868312504696833', '1265868313662197851', 's'],
-    podeAdvertir:    ['1265868312504696833', '1265868313662197851', 's', 'ID_CARGO_OFICIAL'],
-    podeExonerar:    ['1265868312504696833', '1265868313662197851'],
-    podeAprovarAusencia: ['1265868312504696833', '1265868313662197851', 's'],
-    podeAprovarRecrutamento: ['1265868312504696833', '1265868313662197851', 's'],
-    podeDashboard:   ['1265868312504696833', '1265868313662197851', 's'],
-    podeTicketStaff: ['1265868312504696833', '1265868313662197851', 's', 'ID_CARGO_OFICIAL'],
+    podePRomover:    ['1265868309467762729', '1265868312504696833', 'ID_CARGO_COORDENADOR'],
+    podeRebaixar:    ['1265868309467762729', '1265868312504696833', 'ID_CARGO_COORDENADOR'],
+    podeAdvertir:    ['1265868309467762729', '1265868312504696833', 'ID_CARGO_COORDENADOR', 'ID_CARGO_OFICIAL'],
+    podeExonerar:    ['1265868309467762729', '1265868312504696833'],
+    podeAprovarAusencia: ['1265868309467762729', '1265868312504696833', 'ID_CARGO_COORDENADOR'],
+    podeAprovarRecrutamento: ['1265868309467762729', '1265868312504696833', 'ID_CARGO_COORDENADOR'],
+    podeDashboard:   ['1265868309467762729', '1265868312504696833', 'ID_CARGO_COORDENADOR'],
+    podeTicketStaff: ['1265868309467762729', '1265868312504696833', 'ID_CARGO_COORDENADOR', 'ID_CARGO_OFICIAL'],
   },
 
   // ============================================
@@ -54,7 +54,7 @@ module.exports = {
     tickets:         '1265868540494221435',
 
     // Categoria para tickets
-    categoriaTickets: '1515129942344466512',
+    categoriaTickets: 'ID_CATEG1515129942344466512ORIA_TICKETS',
 
     // Canais de voz autorizados para bate-ponto
     voiceAutorizados: [
@@ -63,14 +63,13 @@ module.exports = {
       '1362165240338321669',
       '1297975693468242021',
       '1265868594655527044',
-      '1265868596236521484',
       '1265868597239218240',
     ],
 
     // Canais de logs
     logs: {
-      registro:       '1389278380414734356,1515126923733499955',
-      recrutamento:   '1515126992729673738',
+      registro:       '1389278380414734356',
+      recrutamento:   '1515125340421488741',
       promocoes:      '1265868579174355071',
       rebaixamentos:  '1265868581967626333',
       advertencias:   '1265868580747219046',
