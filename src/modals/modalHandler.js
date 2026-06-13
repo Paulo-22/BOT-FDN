@@ -9,6 +9,7 @@ const horasService = require('../services/horasService');
 async function handleModal(interaction) {
   const { customId } = interaction;
   try {
+    // ── Modais padrão ────────────────────────
     if (customId === 'modal_registro')          return await handleRegistro(interaction);
     if (customId === 'modal_candidatura')       return await handleCandidatura(interaction);
     if (customId === 'modal_transferencia')     return await handleTransferencia(interaction);
@@ -20,10 +21,49 @@ async function handleModal(interaction) {
     if (customId === 'modal_add_horas')         return await handleGerenciarHoras(interaction, 'ADD');
     if (customId === 'modal_rem_horas')         return await handleGerenciarHoras(interaction, 'REM');
     if (customId === 'modal_consultar_membro')  return await handleConsultarMembro(interaction);
+
+    // ── Modais automáticos (via UserSelect/RoleSelect) ──
+    // modal_advertencia_auto_USERID
+    if (customId.startsWith('modal_advertencia_auto_')) {
+      const userId = customId.replace('modal_advertencia_auto_', '');
+      return await handleAdvertenciaAuto(interaction, userId);
+    }
+    // modal_exoneracao_auto_USERID
+    if (customId.startsWith('modal_exoneracao_auto_')) {
+      const userId = customId.replace('modal_exoneracao_auto_', '');
+      return await handleExoneracaoAuto(interaction, userId);
+    }
+    // modal_promocao_auto_USERID_ROLEID
+    if (customId.startsWith('modal_promocao_auto_')) {
+      const partes = customId.replace('modal_promocao_auto_', '').split('_');
+      const roleId = partes.pop();
+      const userId = partes.join('_');
+      return await handlePromocaoAuto(interaction, userId, roleId, 'PROMOCAO');
+    }
+    // modal_rebaixamento_auto_USERID_ROLEID
+    if (customId.startsWith('modal_rebaixamento_auto_')) {
+      const partes = customId.replace('modal_rebaixamento_auto_', '').split('_');
+      const roleId = partes.pop();
+      const userId = partes.join('_');
+      return await handlePromocaoAuto(interaction, userId, roleId, 'REBAIXAMENTO');
+    }
+    // modal_add_horas_auto_USERID
+    if (customId.startsWith('modal_add_horas_auto_')) {
+      const userId = customId.replace('modal_add_horas_auto_', '');
+      return await handleGerenciarHorasAuto(interaction, userId, 'ADD');
+    }
+    // modal_rem_horas_auto_USERID
+    if (customId.startsWith('modal_rem_horas_auto_')) {
+      const userId = customId.replace('modal_rem_horas_auto_', '');
+      return await handleGerenciarHorasAuto(interaction, userId, 'REM');
+    }
+
+    // ── Punição ──────────────────────────────
     if (customId.startsWith('modal_punicao_')) {
       const tipo = customId.replace('modal_punicao_', '');
       return await handlePunicao(interaction, tipo);
     }
+
   } catch (err) {
     console.error('[MODAL ERROR]', err);
     const msg = { content: '❌ Erro ao processar o formulário.', ephemeral: true };
@@ -209,6 +249,207 @@ async function handleAusencia(interaction) {
   });
 }
 
+// ── Advertência (legado — digita ID manualmente) ──────────────
+
+async function handleAdvertencia(interaction) {
+  const { user, guild } = interaction;
+  const usuario_id = interaction.fields.getTextInputValue('usuario_id').trim();
+  const motivo     = interaction.fields.getTextInputValue('motivo').trim();
+  return await _aplicarAdvertencia(interaction, guild, user, usuario_id, motivo);
+}
+
+// ── Advertência automática (via UserSelect) ──────────────────
+
+async function handleAdvertenciaAuto(interaction, userId) {
+  const motivo = interaction.fields.getTextInputValue('motivo').trim();
+  return await _aplicarAdvertencia(interaction, interaction.guild, interaction.user, userId, motivo);
+}
+
+async function _aplicarAdvertencia(interaction, guild, responsavel, usuario_id, motivo) {
+  const alvo = await prisma.usuario.findUnique({ where: { discord_id: usuario_id } });
+  if (!alvo) return interaction.reply({
+    embeds: [new EmbedBuilder().setColor(config.cores.erro).setDescription('❌ Membro não encontrado.')],
+    ephemeral: true,
+  });
+
+  const adv = await prisma.advertencia.create({ data: { usuario: usuario_id, responsavel: responsavel.id, motivo } });
+  await logger.logAdvertencia(interaction.client, adv);
+
+  const membro = await guild.members.fetch(usuario_id).catch(() => null);
+  if (membro) {
+    await membro.send({ embeds: [new EmbedBuilder().setColor(config.cores.erro)
+      .setTitle('⚠️ Você recebeu uma advertência')
+      .addFields({ name: 'Motivo', value: motivo }, { name: 'Responsável', value: `<@${responsavel.id}>` })
+      .setTimestamp()]
+    }).catch(() => {});
+  }
+
+  return interaction.reply({
+    embeds: [new EmbedBuilder().setColor(config.cores.sucesso)
+      .setDescription(`✅ Advertência aplicada a <@${usuario_id}>.\n\n**Motivo:** ${motivo}`)
+      .setTimestamp()],
+    ephemeral: true,
+  });
+}
+
+// ── Promoção/Rebaixamento (legado — digita ID manualmente) ────
+
+async function handlePromocao(interaction, tipo) {
+  const { user, guild } = interaction;
+  const usuario_id  = interaction.fields.getTextInputValue('usuario_id').trim();
+  const cargo_atual = interaction.fields.getTextInputValue('cargo_atual').trim();
+  const novo_cargo  = interaction.fields.getTextInputValue('novo_cargo').trim();
+  const motivo      = interaction.fields.getTextInputValue('motivo').trim();
+  return await _aplicarPromocao(interaction, guild, user, usuario_id, cargo_atual, novo_cargo, null, motivo, tipo);
+}
+
+// ── Promoção/Rebaixamento automática (via UserSelect + RoleSelect) ──
+
+async function handlePromocaoAuto(interaction, userId, roleId, tipo) {
+  const motivo = interaction.fields.getTextInputValue('motivo').trim();
+  const guild  = interaction.guild;
+  const role   = await guild.roles.fetch(roleId).catch(() => null);
+  const novo_cargo = role ? role.name : roleId;
+
+  // Busca cargo atual do membro no banco
+  const alvo = await prisma.usuario.findUnique({ where: { discord_id: userId } });
+  const cargo_atual = alvo?.cargo || 'Desconhecido';
+
+  return await _aplicarPromocao(interaction, guild, interaction.user, userId, cargo_atual, novo_cargo, roleId, motivo, tipo);
+}
+
+async function _aplicarPromocao(interaction, guild, responsavel, usuario_id, cargo_atual, novo_cargo, roleId, motivo, tipo) {
+  const alvo = await prisma.usuario.findUnique({ where: { discord_id: usuario_id } });
+  if (!alvo) return interaction.reply({
+    embeds: [new EmbedBuilder().setColor(config.cores.erro).setDescription('❌ Membro não encontrado.')],
+    ephemeral: true,
+  });
+
+  await prisma.usuario.update({ where: { discord_id: usuario_id }, data: { cargo: novo_cargo } });
+
+  const membro = await guild.members.fetch(usuario_id).catch(() => null);
+  if (membro) {
+    // Remove todos os cargos da hierarquia antes de adicionar o novo
+    for (const c of config.cargos.hierarquia) {
+      if (!c.id.startsWith('ID_')) await membro.roles.remove(c.id).catch(() => {});
+    }
+    // Se veio via RoleSelect, usa o ID direto; senão tenta achar pelo nome
+    if (roleId && !roleId.startsWith('ID_')) {
+      await membro.roles.add(roleId).catch(() => {});
+    } else {
+      const cargo = config.cargos.hierarquia.find(c => c.nome.toLowerCase() === novo_cargo.toLowerCase());
+      if (cargo && !cargo.id.startsWith('ID_')) await membro.roles.add(cargo.id).catch(() => {});
+    }
+    await membro.send({ embeds: [new EmbedBuilder()
+      .setColor(tipo === 'PROMOCAO' ? config.cores.gold : config.cores.aviso)
+      .setTitle(tipo === 'PROMOCAO' ? '⬆️ Você foi promovido!' : '⬇️ Você foi rebaixado')
+      .addFields(
+        { name: 'Cargo Anterior', value: cargo_atual, inline: true },
+        { name: 'Novo Cargo', value: novo_cargo, inline: true },
+        { name: 'Motivo', value: motivo },
+      )
+      .setTimestamp()]
+    }).catch(() => {});
+  }
+
+  const dados = { usuario: usuario_id, cargo_antigo: cargo_atual, cargo_novo: novo_cargo, motivo, responsavel: responsavel.id };
+  if (tipo === 'PROMOCAO') {
+    await prisma.promocao.create({ data: dados });
+    await logger.logPromocao(interaction.client, dados);
+  } else {
+    await prisma.rebaixamento.create({ data: dados });
+    await logger.logRebaixamento(interaction.client, dados);
+  }
+
+  return interaction.reply({
+    embeds: [new EmbedBuilder()
+      .setColor(tipo === 'PROMOCAO' ? config.cores.gold : config.cores.aviso)
+      .setDescription(`${tipo === 'PROMOCAO' ? '⬆️' : '⬇️'} <@${usuario_id}> **${cargo_atual}** → **${novo_cargo}**\n\n**Motivo:** ${motivo}`)
+      .setTimestamp()],
+    ephemeral: true,
+  });
+}
+
+// ── Exoneração (legado — digita ID manualmente) ───────────────
+
+async function handleExoneracao(interaction) {
+  const { user, guild } = interaction;
+  const usuario_id = interaction.fields.getTextInputValue('usuario_id').trim();
+  const motivo     = interaction.fields.getTextInputValue('motivo').trim();
+  return await _aplicarExoneracao(interaction, guild, user, usuario_id, motivo);
+}
+
+// ── Exoneração automática (via UserSelect) ────────────────────
+
+async function handleExoneracaoAuto(interaction, userId) {
+  const motivo = interaction.fields.getTextInputValue('motivo').trim();
+  return await _aplicarExoneracao(interaction, interaction.guild, interaction.user, userId, motivo);
+}
+
+async function _aplicarExoneracao(interaction, guild, responsavel, usuario_id, motivo) {
+  const alvo = await prisma.usuario.findUnique({ where: { discord_id: usuario_id } });
+  if (!alvo) return interaction.reply({
+    embeds: [new EmbedBuilder().setColor(config.cores.erro).setDescription('❌ Membro não encontrado.')],
+    ephemeral: true,
+  });
+
+  const membro = await guild.members.fetch(usuario_id).catch(() => null);
+  if (membro) {
+    for (const cargo of config.cargos.hierarquia) {
+      if (!cargo.id.startsWith('ID_')) await membro.roles.remove(cargo.id).catch(() => {});
+    }
+    if (!config.cargos.exonerado.startsWith('ID_')) await membro.roles.add(config.cargos.exonerado).catch(() => {});
+    await membro.send({ embeds: [new EmbedBuilder().setColor(config.cores.erro)
+      .setTitle('🚫 Você foi exonerado da FDN')
+      .addFields({ name: 'Motivo', value: motivo })
+      .setTimestamp()]
+    }).catch(() => {});
+  }
+
+  await prisma.usuario.update({ where: { discord_id: usuario_id }, data: { cargo: 'Exonerado' } });
+  const exon = await prisma.exoneracao.create({ data: { usuario: usuario_id, motivo, responsavel: responsavel.id } });
+  await logger.logExoneracao(interaction.client, exon);
+
+  return interaction.reply({
+    embeds: [new EmbedBuilder().setColor(config.cores.erro)
+      .setDescription(`🚫 <@${usuario_id}> foi exonerado da **FDN**.\n\n**Motivo:** ${motivo}`)
+      .setTimestamp()],
+    ephemeral: true,
+  });
+}
+
+// ── Gerenciar Horas (legado — digita ID manualmente) ─────────
+
+async function handleGerenciarHoras(interaction, tipo) {
+  const usuario_id = interaction.fields.getTextInputValue('usuario_id').trim();
+  const horas      = parseFloat(interaction.fields.getTextInputValue('horas').trim());
+  return await _aplicarHoras(interaction, usuario_id, horas, tipo);
+}
+
+// ── Gerenciar Horas automático (via UserSelect) ───────────────
+
+async function handleGerenciarHorasAuto(interaction, userId, tipo) {
+  const horas = parseFloat(interaction.fields.getTextInputValue('horas').trim());
+  return await _aplicarHoras(interaction, userId, horas, tipo);
+}
+
+async function _aplicarHoras(interaction, usuario_id, horas, tipo) {
+  if (isNaN(horas) || horas <= 0) return interaction.reply({
+    embeds: [new EmbedBuilder().setColor(config.cores.erro).setDescription('❌ Valor inválido.')],
+    ephemeral: true,
+  });
+
+  tipo === 'ADD'
+    ? await horasService.adicionarHorasManual(usuario_id, horas)
+    : await horasService.removerHorasManual(usuario_id, horas);
+
+  return interaction.reply({
+    embeds: [new EmbedBuilder().setColor(config.cores.sucesso)
+      .setDescription(`✅ ${tipo === 'ADD' ? 'Adicionadas' : 'Removidas'} **${horas}h** de <@${usuario_id}>`)],
+    ephemeral: true,
+  });
+}
+
 // ── Punição ──────────────────────────────────
 
 async function handlePunicao(interaction, tipo) {
@@ -255,152 +496,6 @@ async function handlePunicao(interaction, tipo) {
     embeds: [new EmbedBuilder().setColor(config.cores.sucesso)
       .setDescription(`✅ Punição **${tipo}** aplicada a <@${usuario_id}>.\n\n**Motivo:** ${motivo}`)
       .setTimestamp()],
-    ephemeral: true,
-  });
-}
-
-// ── Advertência ──────────────────────────────
-
-async function handleAdvertencia(interaction) {
-  const { user, guild } = interaction;
-  const usuario_id = interaction.fields.getTextInputValue('usuario_id').trim();
-  const motivo     = interaction.fields.getTextInputValue('motivo').trim();
-
-  const alvo = await prisma.usuario.findUnique({ where: { discord_id: usuario_id } });
-  if (!alvo) return interaction.reply({
-    embeds: [new EmbedBuilder().setColor(config.cores.erro).setDescription('❌ Membro não encontrado.')],
-    ephemeral: true,
-  });
-
-  const adv = await prisma.advertencia.create({ data: { usuario: usuario_id, responsavel: user.id, motivo } });
-  await logger.logAdvertencia(interaction.client, adv);
-
-  const membro = await guild.members.fetch(usuario_id).catch(() => null);
-  if (membro) {
-    await membro.send({ embeds: [new EmbedBuilder().setColor(config.cores.erro)
-      .setTitle('⚠️ Você recebeu uma advertência')
-      .addFields({ name: 'Motivo', value: motivo }, { name: 'Responsável', value: `<@${user.id}>` })
-      .setTimestamp()]
-    }).catch(() => {});
-  }
-
-  return interaction.reply({
-    embeds: [new EmbedBuilder().setColor(config.cores.sucesso)
-      .setDescription(`✅ Advertência aplicada a <@${usuario_id}>.\n\n**Motivo:** ${motivo}`)
-      .setTimestamp()],
-    ephemeral: true,
-  });
-}
-
-// ── Promoção / Rebaixamento ──────────────────
-
-async function handlePromocao(interaction, tipo) {
-  const { user, guild } = interaction;
-  const usuario_id  = interaction.fields.getTextInputValue('usuario_id').trim();
-  const cargo_atual = interaction.fields.getTextInputValue('cargo_atual').trim();
-  const novo_cargo  = interaction.fields.getTextInputValue('novo_cargo').trim();
-  const motivo      = interaction.fields.getTextInputValue('motivo').trim();
-
-  const alvo = await prisma.usuario.findUnique({ where: { discord_id: usuario_id } });
-  if (!alvo) return interaction.reply({
-    embeds: [new EmbedBuilder().setColor(config.cores.erro).setDescription('❌ Membro não encontrado.')],
-    ephemeral: true,
-  });
-
-  await prisma.usuario.update({ where: { discord_id: usuario_id }, data: { cargo: novo_cargo } });
-
-  const membro = await guild.members.fetch(usuario_id).catch(() => null);
-  if (membro) {
-    const antigo = config.cargos.hierarquia.find(c => c.nome.toLowerCase() === cargo_atual.toLowerCase());
-    const novo   = config.cargos.hierarquia.find(c => c.nome.toLowerCase() === novo_cargo.toLowerCase());
-    if (antigo && !antigo.id.startsWith('ID_')) await membro.roles.remove(antigo.id).catch(() => {});
-    if (novo   && !novo.id.startsWith('ID_'))   await membro.roles.add(novo.id).catch(() => {});
-    await membro.send({ embeds: [new EmbedBuilder()
-      .setColor(tipo === 'PROMOCAO' ? config.cores.gold : config.cores.aviso)
-      .setTitle(tipo === 'PROMOCAO' ? '⬆️ Você foi promovido!' : '⬇️ Você foi rebaixado')
-      .addFields(
-        { name: 'Cargo Anterior', value: cargo_atual, inline: true },
-        { name: 'Novo Cargo', value: novo_cargo, inline: true },
-        { name: 'Motivo', value: motivo },
-      )
-      .setTimestamp()]
-    }).catch(() => {});
-  }
-
-  const dados = { usuario: usuario_id, cargo_antigo: cargo_atual, cargo_novo: novo_cargo, motivo, responsavel: user.id };
-  if (tipo === 'PROMOCAO') {
-    await prisma.promocao.create({ data: dados });
-    await logger.logPromocao(interaction.client, dados);
-  } else {
-    await prisma.rebaixamento.create({ data: dados });
-    await logger.logRebaixamento(interaction.client, dados);
-  }
-
-  return interaction.reply({
-    embeds: [new EmbedBuilder()
-      .setColor(tipo === 'PROMOCAO' ? config.cores.gold : config.cores.aviso)
-      .setDescription(`${tipo === 'PROMOCAO' ? '⬆️' : '⬇️'} <@${usuario_id}> **${cargo_atual}** → **${novo_cargo}**\n\n**Motivo:** ${motivo}`)
-      .setTimestamp()],
-    ephemeral: true,
-  });
-}
-
-// ── Exoneração ───────────────────────────────
-
-async function handleExoneracao(interaction) {
-  const { user, guild } = interaction;
-  const usuario_id = interaction.fields.getTextInputValue('usuario_id').trim();
-  const motivo     = interaction.fields.getTextInputValue('motivo').trim();
-
-  const alvo = await prisma.usuario.findUnique({ where: { discord_id: usuario_id } });
-  if (!alvo) return interaction.reply({
-    embeds: [new EmbedBuilder().setColor(config.cores.erro).setDescription('❌ Membro não encontrado.')],
-    ephemeral: true,
-  });
-
-  const membro = await guild.members.fetch(usuario_id).catch(() => null);
-  if (membro) {
-    for (const cargo of config.cargos.hierarquia) {
-      if (!cargo.id.startsWith('ID_')) await membro.roles.remove(cargo.id).catch(() => {});
-    }
-    if (!config.cargos.exonerado.startsWith('ID_')) await membro.roles.add(config.cargos.exonerado).catch(() => {});
-    await membro.send({ embeds: [new EmbedBuilder().setColor(config.cores.erro)
-      .setTitle('🚫 Você foi exonerado da FDN')
-      .addFields({ name: 'Motivo', value: motivo })
-      .setTimestamp()]
-    }).catch(() => {});
-  }
-
-  await prisma.usuario.update({ where: { discord_id: usuario_id }, data: { cargo: 'Exonerado' } });
-  const exon = await prisma.exoneracao.create({ data: { usuario: usuario_id, motivo, responsavel: user.id } });
-  await logger.logExoneracao(interaction.client, exon);
-
-  return interaction.reply({
-    embeds: [new EmbedBuilder().setColor(config.cores.erro)
-      .setDescription(`🚫 <@${usuario_id}> foi exonerado da **FDN**.\n\n**Motivo:** ${motivo}`)
-      .setTimestamp()],
-    ephemeral: true,
-  });
-}
-
-// ── Gerenciar Horas ──────────────────────────
-
-async function handleGerenciarHoras(interaction, tipo) {
-  const usuario_id = interaction.fields.getTextInputValue('usuario_id').trim();
-  const horas = parseFloat(interaction.fields.getTextInputValue('horas').trim());
-
-  if (isNaN(horas) || horas <= 0) return interaction.reply({
-    embeds: [new EmbedBuilder().setColor(config.cores.erro).setDescription('❌ Valor inválido.')],
-    ephemeral: true,
-  });
-
-  tipo === 'ADD'
-    ? await horasService.adicionarHorasManual(usuario_id, horas)
-    : await horasService.removerHorasManual(usuario_id, horas);
-
-  return interaction.reply({
-    embeds: [new EmbedBuilder().setColor(config.cores.sucesso)
-      .setDescription(`✅ ${tipo === 'ADD' ? 'Adicionadas' : 'Removidas'} **${horas}h** de <@${usuario_id}>`)],
     ephemeral: true,
   });
 }

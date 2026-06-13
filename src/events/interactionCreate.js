@@ -8,9 +8,11 @@ module.exports = {
   name: 'interactionCreate',
   async execute(interaction) {
     try {
-      if (interaction.isButton())             await handleButton(interaction);
-      else if (interaction.isModalSubmit())   await handleModal(interaction);
-      else if (interaction.isStringSelectMenu()) await handleSelect(interaction);
+      if (interaction.isButton())                 return await handleButton(interaction);
+      if (interaction.isModalSubmit())            return await handleModal(interaction);
+      if (interaction.isStringSelectMenu())       return await handleSelect(interaction);
+      if (interaction.isUserSelectMenu())         return await handleSelect(interaction);
+      if (interaction.isRoleSelectMenu())         return await handleSelect(interaction);
     } catch (err) {
       console.error('[INTERACTION ERROR]', err);
     }
