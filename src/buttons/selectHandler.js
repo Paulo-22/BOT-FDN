@@ -1,22 +1,32 @@
 // src/buttons/selectHandler.js
-// Gerencia menus suspensos — UserSelect, RoleSelect e StringSelect
+// Gerencia UserSelect, RoleSelect e StringSelect
+// Fluxo automático: UserSelect → (RoleSelect) → Modal de motivo → Ação
 
 const {
-  EmbedBuilder, ActionRowBuilder, RoleSelectMenuBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  RoleSelectMenuBuilder,
   StringSelectMenuBuilder,
+  ButtonBuilder,
+  ButtonStyle,
 } = require('discord.js');
-const config  = require('../config');
-const modals  = require('../modals/modals');
-const perm    = require('../utils/permissoes');
-const { prisma } = require('../database/client');
-const logger  = require('../logs/logger');
+
+const config       = require('../config');
+const modals       = require('../modals/modals');
+const perm         = require('../utils/permissoes');
+const { prisma }   = require('../database/client');
+const logger       = require('../logs/logger');
 const horasService = require('../services/horasService');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROTEADOR
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function handleSelect(interaction) {
   const { customId, values } = interaction;
 
   try {
-    // ── Punição (string select) ──────────────
+    // ── StringSelect: menu de punição ─────────────────────────────────────────
     if (customId === 'menu_punicao') {
       if (!perm.podeAdvertir(interaction.member)) {
         return interaction.reply({ content: '❌ Sem permissão.', ephemeral: true });
@@ -24,18 +34,19 @@ async function handleSelect(interaction) {
       return await interaction.showModal(modals.modalPunicao(values[0]));
     }
 
-    // ── UserSelect: membro selecionado ───────
+    // ── UserSelect ────────────────────────────────────────────────────────────
     if (customId.startsWith('userselect_')) {
       const acao   = customId.replace('userselect_', '');
       const userId = values[0];
       return await handleUserSelecionado(interaction, acao, userId);
     }
 
-    // ── RoleSelect: cargo selecionado ────────
+    // ── RoleSelect ────────────────────────────────────────────────────────────
     if (customId.startsWith('roleselect_')) {
-      const parts  = customId.split('_');
-      const acao   = parts[1]; // promocao ou rebaixamento
-      const userId = parts[2];
+      // formato: roleselect_<acao>_<userId>
+      const partes = customId.split('_');
+      const acao   = partes[1]; // 'promocao' ou 'rebaixamento'
+      const userId = partes[2];
       const roleId = values[0];
       return await handleCargoSelecionado(interaction, acao, userId, roleId);
     }
@@ -47,51 +58,113 @@ async function handleSelect(interaction) {
   }
 }
 
-// ── Após selecionar o membro ─────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// PASSO 1 — Membro selecionado via UserSelect
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function handleUserSelecionado(interaction, acao, userId) {
   const membro = await interaction.guild.members.fetch(userId).catch(() => null);
-  const nome   = membro ? membro.displayName : userId;
+  const nome   = membro ? membro.displayName : `<@${userId}>`;
 
-  // Promoção/Rebaixamento → próximo passo: selecionar cargo
-  if (acao === 'promover' || acao === 'rebaixar') {
-    const titulo = acao === 'promover' ? '⬆️ Promover' : '⬇️ Rebaixar';
-    const roleMenu = new RoleSelectMenuBuilder()
-      .setCustomId(`roleselect_${acao === 'promover' ? 'promocao' : 'rebaixamento'}_${userId}`)
-      .setPlaceholder('Selecione o novo cargo...')
-      .setMinValues(1)
-      .setMaxValues(1);
+  // ── Promoção → selecionar o novo cargo ───────────────────────────────────
+  if (acao === 'promover') {
+    const cargoAtualIdx = _getCargoAtualIdx(membro);
+
+    // Filtra somente cargos acima do atual
+    const cargosDisponiveis = config.cargos.hierarquia.slice(cargoAtualIdx + 1);
+    if (!cargosDisponiveis.length) {
+      return interaction.update({
+        embeds: [new EmbedBuilder().setColor(config.cores.aviso)
+          .setDescription(`⚠️ **${nome}** já está no cargo máximo da hierarquia.`)],
+        components: [],
+      });
+    }
 
     return interaction.update({
-      embeds: [new EmbedBuilder().setColor(config.cores.principal)
-        .setTitle(`${titulo} — ${nome}`)
-        .setDescription('Agora selecione o **novo cargo** para este membro:')
+      embeds: [new EmbedBuilder().setColor(config.cores.sucesso)
+        .setTitle('⬆️ Promover Membro')
+        .setDescription(`Membro selecionado: **${nome}**\nSelecione o **novo cargo**:`)],
+      components: [
+        new ActionRowBuilder().addComponents(
+          new RoleSelectMenuBuilder()
+            .setCustomId(`roleselect_promocao_${userId}`)
+            .setPlaceholder('Selecione o novo cargo...')
+            .setMinValues(1)
+            .setMaxValues(1),
+        ),
       ],
-      components: [new ActionRowBuilder().addComponents(roleMenu)],
     });
   }
 
-  // Advertir → modal só com motivo
+  // ── Rebaixamento → selecionar o novo cargo ────────────────────────────────
+  if (acao === 'rebaixar') {
+    const cargoAtualIdx = _getCargoAtualIdx(membro);
+
+    const cargosDisponiveis = config.cargos.hierarquia.slice(0, cargoAtualIdx);
+    if (!cargosDisponiveis.length) {
+      return interaction.update({
+        embeds: [new EmbedBuilder().setColor(config.cores.aviso)
+          .setDescription(`⚠️ **${nome}** não pode ser rebaixado (cargo mínimo ou sem cargo na hierarquia).`)],
+        components: [],
+      });
+    }
+
+    return interaction.update({
+      embeds: [new EmbedBuilder().setColor(config.cores.erro)
+        .setTitle('⬇️ Rebaixar Membro')
+        .setDescription(`Membro selecionado: **${nome}**\nSelecione o **novo cargo**:`)],
+      components: [
+        new ActionRowBuilder().addComponents(
+          new RoleSelectMenuBuilder()
+            .setCustomId(`roleselect_rebaixamento_${userId}`)
+            .setPlaceholder('Selecione o novo cargo...')
+            .setMinValues(1)
+            .setMaxValues(1),
+        ),
+      ],
+    });
+  }
+
+  // ── Advertir → modal de motivo ────────────────────────────────────────────
   if (acao === 'advertir') {
     await interaction.update({
-      embeds: [new EmbedBuilder().setColor(config.cores.principal)
-        .setDescription(`⚠️ Advertindo **${nome}**...`)],
+      embeds: [new EmbedBuilder().setColor(config.cores.aviso)
+        .setDescription(`⚠️ Abrindo formulário de advertência para **${nome}**...`)],
       components: [],
     });
     return await interaction.showModal(modals.modalMotivoSimples('advertencia', userId, nome));
   }
 
-  // Exonerar → modal só com motivo
+  // ── Exonerar → confirmação + modal de motivo ──────────────────────────────
   if (acao === 'exonerar') {
-    await interaction.update({
-      embeds: [new EmbedBuilder().setColor(config.cores.principal)
-        .setDescription(`🚫 Exonerando **${nome}**...`)],
-      components: [],
+    return interaction.update({
+      embeds: [new EmbedBuilder().setColor(config.cores.erro)
+        .setTitle('🚫 Confirmar Exoneração')
+        .setDescription(
+          `Você está prestes a **exonerar** <@${userId}> (${nome}).\n\n` +
+          `Esta ação irá:\n` +
+          `• Remover **todos** os cargos da hierarquia\n` +
+          `• Aplicar o cargo de **Exonerado**\n` +
+          `• Notificar o membro via DM\n\n` +
+          `Tem certeza?`,
+        )],
+      components: [
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`btn_prosseguir_exonerar_${userId}`)
+            .setLabel('Sim, exonerar')
+            .setStyle(ButtonStyle.Danger)
+            .setEmoji('🚫'),
+          new ButtonBuilder()
+            .setCustomId('btn_cancelar_acao_')
+            .setLabel('Cancelar')
+            .setStyle(ButtonStyle.Secondary),
+        ),
+      ],
     });
-    return await interaction.showModal(modals.modalMotivoSimples('exoneracao', userId, nome));
   }
 
-  // Adicionar/Remover horas → modal com quantidade
+  // ── Adicionar / Remover Horas ─────────────────────────────────────────────
   if (acao === 'add_horas' || acao === 'rem_horas') {
     await interaction.update({
       embeds: [new EmbedBuilder().setColor(config.cores.principal)
@@ -99,36 +172,51 @@ async function handleUserSelecionado(interaction, acao, userId) {
       components: [],
     });
     return await interaction.showModal(
-      modals.modalGerenciarHorasAuto(acao === 'add_horas' ? 'ADD' : 'REM', userId)
+      modals.modalGerenciarHorasAuto(acao === 'add_horas' ? 'ADD' : 'REM', userId),
     );
   }
 
-  // Consultar membro
+  // ── Consultar Membro ──────────────────────────────────────────────────────
   if (acao === 'consultar') {
     await interaction.deferUpdate();
     return await handleConsultarMembro(interaction, userId);
   }
 }
 
-// ── Após selecionar o cargo ──────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// PASSO 2 — Cargo selecionado via RoleSelect → abre modal de motivo
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function handleCargoSelecionado(interaction, acao, userId, roleId) {
+  const role  = await interaction.guild.roles.fetch(roleId).catch(() => null);
   const membro = await interaction.guild.members.fetch(userId).catch(() => null);
-  const role   = await interaction.guild.roles.fetch(roleId).catch(() => null);
-  const nome   = membro ? membro.displayName : userId;
-  const cargo  = role ? role.name : roleId;
+  const nomeCargo = role ? role.name : roleId;
+  const nomeMembro = membro ? membro.displayName : `<@${userId}>`;
+
+  // Valida se o cargo está na hierarquia FDN
+  const cargoFDN = config.cargos.hierarquia.find(c => c.id === roleId);
+  if (!cargoFDN) {
+    return interaction.update({
+      embeds: [new EmbedBuilder().setColor(config.cores.aviso)
+        .setDescription(`⚠️ O cargo **${nomeCargo}** não pertence à hierarquia da FDN. Selecione um cargo válido.`)],
+      components: [],
+    });
+  }
 
   await interaction.update({
     embeds: [new EmbedBuilder().setColor(config.cores.principal)
-      .setDescription(`Cargo selecionado: **${cargo}** para **${nome}**\nAbrindo formulário de motivo...`)
-    ],
+      .setDescription(
+        `${acao === 'promocao' ? '⬆️' : '⬇️'} **${nomeMembro}** → **${nomeCargo}**\n\nAbrindo formulário de motivo...`,
+      )],
     components: [],
   });
 
-  return await interaction.showModal(modals.modalMotivo(acao, userId, roleId, cargo));
+  return await interaction.showModal(modals.modalMotivo(acao, userId, roleId, nomeCargo));
 }
 
-// ── Consultar membro ─────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSULTAR MEMBRO
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function handleConsultarMembro(interaction, userId) {
   const [usuario, stats, adv, prom, pun] = await Promise.all([
@@ -139,29 +227,49 @@ async function handleConsultarMembro(interaction, userId) {
     prisma.punicao.count({ where: { usuario: userId } }),
   ]);
 
-  if (!usuario) return interaction.editReply({
-    embeds: [new EmbedBuilder().setColor(config.cores.erro)
-      .setDescription('❌ Membro não encontrado no sistema.')],
-    components: [],
-  });
+  if (!usuario) {
+    return interaction.editReply({
+      embeds: [new EmbedBuilder().setColor(config.cores.erro)
+        .setDescription('❌ Membro não encontrado no sistema.')],
+      components: [],
+    });
+  }
 
   return interaction.editReply({
-    embeds: [new EmbedBuilder().setColor(config.cores.info)
-      .setTitle('📊 Ficha do Membro — FDN')
-      .addFields(
-        { name: '👤 Discord',      value: `<@${usuario.discord_id}>`, inline: true },
-        { name: '🎮 Nome MTA',     value: usuario.nome_mta, inline: true },
-        { name: '🆔 ID Gamer',     value: usuario.id_gamer, inline: true },
-        { name: '🏅 Cargo',        value: usuario.cargo, inline: true },
-        { name: '📅 Registro',     value: `<t:${Math.floor(usuario.data_registro.getTime()/1000)}:D>`, inline: true },
-        { name: '⏱️ Horas Totais', value: logger.formatarTempo(stats.total), inline: true },
-        { name: '⚠️ Advertências', value: String(adv), inline: true },
-        { name: '⬆️ Promoções',    value: String(prom), inline: true },
-        { name: '⚖️ Punições',     value: String(pun), inline: true },
-      )
-      .setFooter({ text: 'FDN — Painel Administrativo' }).setTimestamp()],
+    embeds: [
+      new EmbedBuilder()
+        .setColor(config.cores.info)
+        .setTitle('📊 Ficha do Membro — FDN')
+        .setThumbnail(`https://cdn.discordapp.com/avatars/${userId}/${usuario.avatar || '0'}.png`)
+        .addFields(
+          { name: '👤 Discord',       value: `<@${usuario.discord_id}>`,                                      inline: true },
+          { name: '🎮 Nome MTA',      value: usuario.nome_mta,                                               inline: true },
+          { name: '🆔 ID Gamer',      value: usuario.id_gamer,                                               inline: true },
+          { name: '🏅 Cargo',         value: usuario.cargo || 'N/A',                                         inline: true },
+          { name: '📅 Registro',      value: `<t:${Math.floor(usuario.data_registro.getTime() / 1000)}:D>`,  inline: true },
+          { name: '⏱️ Horas Totais', value: logger.formatarTempo(stats.total),                              inline: true },
+          { name: '⚠️ Advertências', value: String(adv),                                                    inline: true },
+          { name: '⬆️ Promoções',    value: String(prom),                                                   inline: true },
+          { name: '⚖️ Punições',     value: String(pun),                                                    inline: true },
+        )
+        .setFooter({ text: 'FDN — Painel Administrativo' })
+        .setTimestamp(),
+    ],
     components: [],
   });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER — descobre o índice do cargo atual do membro na hierarquia
+// ─────────────────────────────────────────────────────────────────────────────
+
+function _getCargoAtualIdx(membro) {
+  if (!membro) return -1;
+  // Percorre da hierarquia mais alta para a mais baixa
+  for (let i = config.cargos.hierarquia.length - 1; i >= 0; i--) {
+    if (membro.roles.cache.has(config.cargos.hierarquia[i].id)) return i;
+  }
+  return -1; // sem cargo na hierarquia
 }
 
 module.exports = { handleSelect };

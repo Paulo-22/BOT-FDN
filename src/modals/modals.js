@@ -1,165 +1,206 @@
 // src/modals/modals.js
+// Todos os modais do bot FDN
 
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 
+// ── Registro ─────────────────────────────────
+
 function modalRegistro() {
-  const modal = new ModalBuilder().setCustomId('modal_registro').setTitle('📋 Registro FDN');
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('nome_mta').setLabel('Nome no MTA (RP)').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(50)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('id_gamer').setLabel('ID de jogador no MTA').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(10)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('telefone').setLabel('Telefone in-game (opcional)').setStyle(TextInputStyle.Short).setRequired(false).setMaxLength(20)
-    ),
-  );
-  return modal;
+  return new ModalBuilder()
+    .setCustomId('modal_registro')
+    .setTitle('📋 Registro — FDN')
+    .addComponents(
+      row(input('nome_mta', 'Nome no MTA (Roleplay)', TextInputStyle.Short, true, 50)),
+      row(input('id_gamer', 'ID de jogador no MTA', TextInputStyle.Short, true, 10)),
+      row(input('telefone', 'Telefone in-game (opcional)', TextInputStyle.Short, false, 20)),
+    );
 }
+
+// ── Candidatura ──────────────────────────────
 
 function modalCandidatura() {
-  const modal = new ModalBuilder().setCustomId('modal_candidatura').setTitle('🎯 Candidatura FDN');
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('nome').setLabel('Nome no MTA').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(50)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('id_gamer').setLabel('ID Gamer').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(10)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('horas').setLabel('Horas jogadas no MTA').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(30)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('experiencia').setLabel('Experiência anterior em facções').setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(500)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('motivo').setLabel('Por que deseja entrar na FDN?').setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(500)
-    ),
-  );
-  return modal;
+  return new ModalBuilder()
+    .setCustomId('modal_candidatura')
+    .setTitle('🎯 Candidatura — FDN')
+    .addComponents(
+      row(input('nome', 'Nome no MTA', TextInputStyle.Short, true, 50)),
+      row(input('id_gamer', 'ID Gamer no MTA', TextInputStyle.Short, true, 10)),
+      row(input('horas', 'Horas jogadas no MTA', TextInputStyle.Short, true, 30)),
+      row(input('experiencia', 'Experiência em facções', TextInputStyle.Paragraph, true, 500)),
+      row(input('motivo', 'Por que deseja entrar na FDN?', TextInputStyle.Paragraph, true, 500)),
+    );
 }
+
+// ── Transferência ────────────────────────────
 
 function modalTransferencia() {
-  const modal = new ModalBuilder().setCustomId('modal_transferencia').setTitle('🔄 Transferência para FDN');
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('nome').setLabel('Nome no MTA').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(50)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('faccao_atual').setLabel('Facção atual').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(50)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('motivo').setLabel('Motivo da transferência').setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(500)
-    ),
-  );
-  return modal;
+  return new ModalBuilder()
+    .setCustomId('modal_transferencia')
+    .setTitle('🔄 Transferência — FDN')
+    .addComponents(
+      row(input('nome', 'Nome no MTA', TextInputStyle.Short, true, 50)),
+      row(input('faccao_atual', 'Facção atual', TextInputStyle.Short, true, 50)),
+      row(input('motivo', 'Motivo da transferência', TextInputStyle.Paragraph, true, 500)),
+    );
 }
+
+// ── Ausência ─────────────────────────────────
 
 function modalAusencia() {
-  const modal = new ModalBuilder().setCustomId('modal_ausencia').setTitle('📅 Registrar Afastamento');
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('motivo').setLabel('Motivo do afastamento').setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(300)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('data_inicio').setLabel('Data de início (DD/MM/AAAA)').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(10)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('data_retorno').setLabel('Data de retorno (DD/MM/AAAA)').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(10)
-    ),
-  );
-  return modal;
+  return new ModalBuilder()
+    .setCustomId('modal_ausencia')
+    .setTitle('📅 Registrar Afastamento')
+    .addComponents(
+      row(input('motivo', 'Motivo do afastamento', TextInputStyle.Paragraph, true, 300)),
+      row(input('data_inicio', 'Data de início (DD/MM/AAAA)', TextInputStyle.Short, true, 10).setPlaceholder('Ex: 01/07/2025')),
+      row(input('data_retorno', 'Data de retorno (DD/MM/AAAA)', TextInputStyle.Short, true, 10).setPlaceholder('Ex: 15/07/2025')),
+    );
 }
+
+// ── Punição ──────────────────────────────────
 
 function modalPunicao(tipo) {
-  const labels = { PUNICAO_1: '⚠️ Punição 1', PUNICAO_2: '🔶 Punição 2', PUNICAO_3: '🔴 Punição 3', REMOCAO: '🚫 Remoção' };
-  const modal = new ModalBuilder().setCustomId(`modal_punicao_${tipo}`).setTitle(labels[tipo] || 'Punição');
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('usuario_id').setLabel('ID do Discord do membro').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(20)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('motivo').setLabel('Motivo').setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(500)
-    ),
-  );
-  return modal;
+  const labels = {
+    PUNICAO_1: '⚠️ Punição Nível 1',
+    PUNICAO_2: '🔶 Punição Nível 2',
+    PUNICAO_3: '🔴 Punição Nível 3',
+    REMOCAO:   '🚫 Remoção',
+  };
+  return new ModalBuilder()
+    .setCustomId(`modal_punicao_${tipo}`)
+    .setTitle(labels[tipo] || 'Punição')
+    .addComponents(
+      row(input('usuario_id', 'ID do Discord do membro', TextInputStyle.Short, true, 20).setPlaceholder('Cole o ID do usuário')),
+      row(input('motivo', 'Motivo da punição', TextInputStyle.Paragraph, true, 500)),
+    );
 }
+
+// ── Advertência ──────────────────────────────
 
 function modalAdvertencia() {
-  const modal = new ModalBuilder().setCustomId('modal_advertencia').setTitle('⚠️ Aplicar Advertência');
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('usuario_id').setLabel('ID do Discord do membro').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(20)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('motivo').setLabel('Motivo da advertência').setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(500)
-    ),
-  );
-  return modal;
+  return new ModalBuilder()
+    .setCustomId('modal_advertencia')
+    .setTitle('⚠️ Aplicar Advertência')
+    .addComponents(
+      row(input('usuario_id', 'ID do Discord do membro', TextInputStyle.Short, true, 20).setPlaceholder('Cole o ID do usuário')),
+      row(input('motivo', 'Motivo da advertência', TextInputStyle.Paragraph, true, 500)),
+    );
 }
 
-function modalPromocao(tipo = 'PROMOCAO') {
-  const modal = new ModalBuilder()
-    .setCustomId(tipo === 'PROMOCAO' ? 'modal_promocao' : 'modal_rebaixamento')
-    .setTitle(tipo === 'PROMOCAO' ? '⬆️ Promover Membro' : '⬇️ Rebaixar Membro');
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('usuario_id').setLabel('ID do Discord do membro').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(20)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('cargo_atual').setLabel('Cargo atual').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(50)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('novo_cargo').setLabel('Novo cargo').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(50)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('motivo').setLabel('Motivo').setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(500)
-    ),
-  );
-  return modal;
+// ── Motivo simples (advertência/exoneração via UserSelect) ───
+
+function modalMotivoSimples(acao, userId, nomeAlvo) {
+  const titulos = {
+    advertencia: '⚠️ Motivo da Advertência',
+    exoneracao:  '🚫 Motivo da Exoneração',
+  };
+  return new ModalBuilder()
+    .setCustomId(`modal_motivo_${acao}_${userId}`)
+    .setTitle(titulos[acao] || 'Motivo')
+    .addComponents(
+      row(
+        input('motivo', `Motivo — ${nomeAlvo}`, TextInputStyle.Paragraph, true, 500)
+          .setPlaceholder('Descreva o motivo da ação...'),
+      ),
+    );
 }
+
+// ── Motivo com cargo (promoção/rebaixamento via UserSelect + RoleSelect) ──
+
+function modalMotivo(acao, userId, roleId, nomeCargo) {
+  const titulos = {
+    promocao:    '⬆️ Motivo da Promoção',
+    rebaixamento:'⬇️ Motivo do Rebaixamento',
+  };
+  return new ModalBuilder()
+    .setCustomId(`modal_motivo_${acao}_${userId}_${roleId}`)
+    .setTitle(titulos[acao] || 'Motivo')
+    .addComponents(
+      row(
+        input('motivo', `Motivo — Cargo: ${nomeCargo}`, TextInputStyle.Paragraph, true, 500)
+          .setPlaceholder('Descreva o motivo da ação...'),
+      ),
+    );
+}
+
+// ── Exoneração ───────────────────────────────
 
 function modalExoneracao() {
-  const modal = new ModalBuilder().setCustomId('modal_exoneracao').setTitle('🚫 Exonerar Membro');
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('usuario_id').setLabel('ID do Discord do membro').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(20)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('motivo').setLabel('Motivo da exoneração').setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(500)
-    ),
-  );
-  return modal;
+  return new ModalBuilder()
+    .setCustomId('modal_exoneracao')
+    .setTitle('🚫 Exonerar Membro')
+    .addComponents(
+      row(input('usuario_id', 'ID do Discord do membro', TextInputStyle.Short, true, 20).setPlaceholder('Cole o ID do usuário')),
+      row(input('motivo', 'Motivo da exoneração', TextInputStyle.Paragraph, true, 500)),
+    );
 }
+
+// ── Gerenciar Horas (dashboard manual) ──────
 
 function modalGerenciarHoras(tipo = 'ADD') {
-  const modal = new ModalBuilder()
+  return new ModalBuilder()
     .setCustomId(tipo === 'ADD' ? 'modal_add_horas' : 'modal_rem_horas')
-    .setTitle(tipo === 'ADD' ? '➕ Adicionar Horas' : '➖ Remover Horas');
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('usuario_id').setLabel('ID do Discord do membro').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(20)
-    ),
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('horas').setLabel('Quantidade de horas').setStyle(TextInputStyle.Short).setPlaceholder('Ex: 5').setRequired(true).setMaxLength(5)
-    ),
-  );
-  return modal;
+    .setTitle(tipo === 'ADD' ? '➕ Adicionar Horas' : '➖ Remover Horas')
+    .addComponents(
+      row(input('usuario_id', 'ID do Discord do membro', TextInputStyle.Short, true, 20)),
+      row(
+        input('horas', 'Quantidade de horas', TextInputStyle.Short, true, 5)
+          .setPlaceholder('Ex: 2.5'),
+      ),
+    );
 }
 
+// ── Gerenciar Horas com userId já preenchido (via UserSelect) ──
+
+function modalGerenciarHorasAuto(tipo = 'ADD', userId) {
+  return new ModalBuilder()
+    .setCustomId(`modal_horas_${tipo.toLowerCase()}_${userId}`)
+    .setTitle(tipo === 'ADD' ? '➕ Adicionar Horas' : '➖ Remover Horas')
+    .addComponents(
+      row(
+        input('horas', 'Quantidade de horas', TextInputStyle.Short, true, 5)
+          .setPlaceholder('Ex: 2.5'),
+      ),
+    );
+}
+
+// ── Consultar Membro ─────────────────────────
+
 function modalConsultarMembro() {
-  const modal = new ModalBuilder().setCustomId('modal_consultar_membro').setTitle('📊 Consultar Membro');
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('usuario_id').setLabel('ID do Discord do membro').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(20)
-    ),
-  );
-  return modal;
+  return new ModalBuilder()
+    .setCustomId('modal_consultar_membro')
+    .setTitle('📊 Consultar Membro')
+    .addComponents(
+      row(input('usuario_id', 'ID do Discord do membro', TextInputStyle.Short, true, 20).setPlaceholder('Cole o ID do usuário')),
+    );
+}
+
+// ── Helpers ──────────────────────────────────
+
+function input(customId, label, style, required = true, maxLength = 100) {
+  return new TextInputBuilder()
+    .setCustomId(customId)
+    .setLabel(label)
+    .setStyle(style)
+    .setRequired(required)
+    .setMaxLength(maxLength);
+}
+
+function row(component) {
+  return new ActionRowBuilder().addComponents(component);
 }
 
 module.exports = {
-  modalRegistro, modalCandidatura, modalTransferencia, modalAusencia,
-  modalPunicao, modalAdvertencia, modalPromocao, modalExoneracao,
-  modalGerenciarHoras, modalConsultarMembro,
+  modalRegistro,
+  modalCandidatura,
+  modalTransferencia,
+  modalAusencia,
+  modalPunicao,
+  modalAdvertencia,
+  modalMotivoSimples,
+  modalMotivo,
+  modalExoneracao,
+  modalGerenciarHoras,
+  modalGerenciarHorasAuto,
+  modalConsultarMembro,
 };
