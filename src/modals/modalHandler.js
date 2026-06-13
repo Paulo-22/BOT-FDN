@@ -109,9 +109,22 @@ async function handleRegistro(interaction) {
   const novoNick = `𝑭𝑫𝑵 » ${nome_mta} ${id_gamer}`;
   const membro = await interaction.guild.members.fetch(user.id).catch(() => null);
   if (membro) {
-    await membro.setNickname(novoNick).catch(() => {
-      // Bot pode não ter permissão para renomear admins/dono — ignora silenciosamente
-    });
+    await membro.setNickname(novoNick).catch(() => {});
+
+    // ── Remover cargo "Sem Cargo" e atribuir os 3 cargos ───────────────────
+    const cargoSemCargo = config.cargos.semCargo;
+    const cargosRegistro = [
+      '1265868398194327627', // Acesso geral (calls e canais)
+      '1265868400324903023', // Verificado
+      '1265868360613101658', // Observação (cargo mais baixo)
+    ];
+
+    if (cargoSemCargo && !cargoSemCargo.startsWith('ID_')) {
+      await membro.roles.remove(cargoSemCargo).catch(() => {});
+    }
+    for (const id of cargosRegistro) {
+      await membro.roles.add(id).catch(() => {});
+    }
   }
 
   await logger.logRegistro(interaction.client, usuario);
@@ -123,7 +136,8 @@ async function handleRegistro(interaction) {
         .setTitle('✅ Registro Concluído!')
         .setDescription(
           `Seu cadastro na **FDN** foi realizado com sucesso!\n\n` +
-          `Seu nome no servidor foi atualizado para:\n**${novoNick}**`
+          `Seu nome no servidor foi atualizado para:\n**${novoNick}**\n\n` +
+          `Você recebeu os cargos de **Verificado** e **Observação** automaticamente.`
         )
         .addFields(
           { name: '🎮 Nome na Cidade', value: nome_mta, inline: true },
