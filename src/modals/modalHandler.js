@@ -95,9 +95,15 @@ const id_gamer = interaction.fields.getTextInputValue('id_gamer').trim();
     });
   }
 
-  const usuario = await prisma.usuario.create({
-    data: { discord_id: user.id, discord_nome: user.tag, nome_mta, id_gamer, telefone },
-  });
+const usuario = await prisma.usuario.create({
+  data: {
+    discord_id: user.id,
+    discord_nome: user.tag,
+    nome_mta,
+    login,
+    id_gamer
+  }
+});
 
   await logger.logRegistro(interaction.client, usuario);
 
@@ -108,16 +114,24 @@ const id_gamer = interaction.fields.getTextInputValue('id_gamer').trim();
         .setTitle('✅ Registro Concluído!')
         .setDescription('Seu cadastro na **FDN** foi realizado com sucesso!')
         .addFields(
-          { name: '🎮 Nome MTA', value: nome_mta, inline: true },
-          { name: '🆔 ID Gamer', value: id_gamer, inline: true },
-          { name: '📞 Telefone', value: telefone || 'Não informado', inline: true },
+          {
+            name: '🎮 Nome MTA',
+            value: nome_mta,
+            inline: true
+          },
+          {
+            name: '👤 Login',
+            value: login,
+            inline: true
+          },
+          {
+            name: '🆔 ID Gamer',
+            value: id_gamer,
+            inline: true
+          }
         )
-        .setFooter({ text: 'FDN — Família do Norte' })
-        .setTimestamp(),
-    ],
-    ephemeral: true,
+    ]
   });
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CANDIDATURA
@@ -709,4 +723,4 @@ async function handleConsultarMembro(interaction) {
   });
 }
 
-module.exports = { handleModal };
+module.exports = { handleModal };}
