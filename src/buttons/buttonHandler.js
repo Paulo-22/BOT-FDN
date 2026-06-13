@@ -157,53 +157,53 @@ async function mostrarUserSelect(interaction, acao, titulo, placeholder) {
   });
 }
 
-return interaction.reply({
-embeds: [
-new EmbedBuilder()
-.setColor('#22C55E')
-.setDescription(
-`☑️ **Ponto iniciado às <t:${Math.floor(Date.now() / 1000)}:T>**\n\n` +
-'• Ele será finalizado ao sair do canal de voz.\n' +
-'• Também pode ser encerrado manualmente pelo botão **DESLIGAR**.'
-)
-.setFooter({
-text: 'FDN • Sistema de Controle de Ponto'
-})
-.setTimestamp()
-],
-ephemeral: true,
-});
+// ─────────────────────────────────────────────────────────────────────────────
+// BATE-PONTO
+// ─────────────────────────────────────────────────────────────────────────────
 
+async function handleLigar(interaction) {
+  await horasService.iniciarPonto(interaction.user.id);
+  return interaction.reply({
+    embeds: [
+      new EmbedBuilder()
+        .setColor('#22C55E')
+        .setDescription(
+          `☑️ **Ponto iniciado às <t:${Math.floor(Date.now() / 1000)}:T>**\n\n` +
+          '• Ele será finalizado ao sair do canal de voz.\n' +
+          '• Também pode ser encerrado manualmente pelo botão **DESLIGAR**.'
+        )
+        .setFooter({ text: 'FDN • Sistema de Controle de Ponto' })
+        .setTimestamp()
+    ],
+    ephemeral: true,
+  });
+}
 
-return interaction.reply({
-  embeds: [
-    new EmbedBuilder()
-      .setColor('#EF4444')
-      .setTitle('✅ PONTO FINALIZADO')
-      .setDescription(
-        `🔴 Seu ponto foi encerrado com sucesso.\n\n` +
-        `⏱️ **Tempo Registrado**\n` +
-        `\`${logger.formatarTempo(resultado.tempoTotal)}\``
-      )
-      .addFields(
-        {
-          name: '👤 Membro',
-          value: `${interaction.user}`,
-          inline: true
-        },
-        {
-          name: '📅 Data',
-          value: `<t:${Math.floor(Date.now() / 1000)}:d>`,
-          inline: true
-        }
-      )
-      .setFooter({
-        text: 'FDN • Sistema de Controle de Ponto'
-      })
-      .setTimestamp()
-  ],
-  ephemeral: true,
-});
+async function handleDesligar(interaction) {
+  const resultado = await horasService.finalizarPonto(interaction.user.id);
+  if (!resultado) {
+    return interaction.reply({ content: '❌ Você não possui um ponto ativo.', ephemeral: true });
+  }
+  return interaction.reply({
+    embeds: [
+      new EmbedBuilder()
+        .setColor('#EF4444')
+        .setTitle('✅ PONTO FINALIZADO')
+        .setDescription(
+          `🔴 Seu ponto foi encerrado com sucesso.\n\n` +
+          `⏱️ **Tempo Registrado**\n` +
+          `\`${logger.formatarTempo(resultado.tempoTotal)}\``
+        )
+        .addFields(
+          { name: '👤 Membro', value: `${interaction.user}`, inline: true },
+          { name: '📅 Data',   value: `<t:${Math.floor(Date.now() / 1000)}:d>`, inline: true }
+        )
+        .setFooter({ text: 'FDN • Sistema de Controle de Ponto' })
+        .setTimestamp()
+    ],
+    ephemeral: true,
+  });
+}
 
 async function handleMinhasHoras(interaction) {
   const stats = await horasService.getEstatisticas(interaction.user.id);
@@ -312,6 +312,7 @@ const fmt = arr =>
       .setTimestamp()
   ]
 });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CANDIDATURA
@@ -575,4 +576,4 @@ async function handleHistorico(interaction) {
   });
 }
 
-module.exports = { handleButton };}
+module.exports = { handleButton };

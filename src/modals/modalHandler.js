@@ -79,9 +79,9 @@ async function handleModal(interaction) {
 
 async function handleRegistro(interaction) {
   const { user } = interaction;
-const nome_mta = interaction.fields.getTextInputValue('nome_mta').trim();
-const login = interaction.fields.getTextInputValue('login').trim();
-const id_gamer = interaction.fields.getTextInputValue('id_gamer').trim();
+  const nome_mta = interaction.fields.getTextInputValue('nome_mta').trim();
+  const login    = interaction.fields.getTextInputValue('login').trim();
+  const id_gamer = interaction.fields.getTextInputValue('id_gamer').trim();
 
   const existente = await prisma.usuario.findFirst({
     where: { OR: [{ discord_id: user.id }, { id_gamer }] },
@@ -95,15 +95,24 @@ const id_gamer = interaction.fields.getTextInputValue('id_gamer').trim();
     });
   }
 
-const usuario = await prisma.usuario.create({
-  data: {
-    discord_id: user.id,
-    discord_nome: user.tag,
-    nome_mta,
-    login,
-    id_gamer
+  const usuario = await prisma.usuario.create({
+    data: {
+      discord_id:   user.id,
+      discord_nome: user.tag,
+      nome_mta,
+      login,
+      id_gamer,
+    },
+  });
+
+  // ── Renomear o membro no servidor ──────────────────────────────────────────
+  const novoNick = `𝑭𝑫𝑵 » ${nome_mta} ${id_gamer}`;
+  const membro = await interaction.guild.members.fetch(user.id).catch(() => null);
+  if (membro) {
+    await membro.setNickname(novoNick).catch(() => {
+      // Bot pode não ter permissão para renomear admins/dono — ignora silenciosamente
+    });
   }
-});
 
   await logger.logRegistro(interaction.client, usuario);
 
@@ -112,26 +121,21 @@ const usuario = await prisma.usuario.create({
       new EmbedBuilder()
         .setColor(config.cores.sucesso)
         .setTitle('✅ Registro Concluído!')
-        .setDescription('Seu cadastro na **FDN** foi realizado com sucesso!')
-        .addFields(
-          {
-            name: '🎮 Nome MTA',
-            value: nome_mta,
-            inline: true
-          },
-          {
-            name: '👤 Login',
-            value: login,
-            inline: true
-          },
-          {
-            name: '🆔 ID Gamer',
-            value: id_gamer,
-            inline: true
-          }
+        .setDescription(
+          `Seu cadastro na **FDN** foi realizado com sucesso!\n\n` +
+          `Seu nome no servidor foi atualizado para:\n**${novoNick}**`
         )
-    ]
+        .addFields(
+          { name: '🎮 Nome na Cidade', value: nome_mta, inline: true },
+          { name: '👤 Login',          value: login,    inline: true },
+          { name: '🆔 ID',             value: id_gamer, inline: true },
+        )
+        .setFooter({ text: 'FDN • Sistema de Registro' })
+        .setTimestamp(),
+    ],
+    ephemeral: true,
   });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CANDIDATURA
@@ -723,4 +727,4 @@ async function handleConsultarMembro(interaction) {
   });
 }
 
-module.exports = { handleModal };}
+module.exports = { handleModal };
