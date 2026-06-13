@@ -165,24 +165,42 @@ async function logTicket(client, ticket, acao) {
 
 async function logBatePonto(client, dados, acao) {
   const iniciado = acao === 'LIGAR';
+  const agora = new Date();
 
-  const embed = new EmbedBuilder()
-    .setColor(iniciado ? config.cores.sucesso : config.cores.erro)
-    .setTitle(iniciado ? '🟢 Ponto Iniciado' : '🔴 Ponto Encerrado')
-    .addFields(
-      { name: 'Membro', value: `<@${dados.usuario}>`, inline: iniciado },
-    );
+  let descricao = '';
 
-  if (!iniciado && dados.tempo_total !== undefined) {
-    embed.addFields({ name: 'Tempo', value: `\`${formatarTempo(dados.tempo_total)}\``, inline: true });
+  if (iniciado) {
+    descricao =
+      `🟢 **MEMBRO:** <@${dados.usuario}>\n` +
+      `🟢 **INÍCIO:** ${agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+  } else {
+    const inicio = dados.inicio ? new Date(dados.inicio) : null;
+    const fmtInicio = inicio
+      ? inicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      : '--:--';
+    const fmtFim = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const total = dados.tempo_total ? formatarTempo(dados.tempo_total) : '00:00';
+    const motivo = dados.automatico
+      ? '• O ponto foi fechado automaticamente, o membro saiu da call.'
+      : '• O membro encerrou o ponto manualmente.';
+
+    descricao =
+      `🟢 **MEMBRO:** <@${dados.usuario}>\n` +
+      `🟢 **INÍCIO:** ${fmtInicio}\n` +
+      `🟢 **TÉRMINO:** ${fmtFim}\n` +
+      `🟢 **TOTAL:** ${total}\n` +
+      `${motivo}`;
   }
 
-  embed
+  const embed = new EmbedBuilder()
+    .setColor(iniciado ? config.cores.sucesso : config.cores.neutro)
+    .setDescription(descricao)
     .setFooter({ text: 'FDN — Bate-Ponto' })
     .setTimestamp();
 
   await enviarLog(client, 'batePonto', embed);
 }
+
 
 // Formata segundos em hh:mm:ss
 function formatarTempo(segundos) {

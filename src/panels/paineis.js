@@ -11,7 +11,7 @@ const {
 const config = require('../config');
 
 // Banner padrão FDN — substitua pela URL da imagem real da facção
-const BANNER_FDN = 'https://i.imgur.com/4M34hi2.png';
+const BANNER_FDN = 'https://ibb.co/chQBKT3W';
 
 // ─────────────────────────────────────────────
 // REGISTRO

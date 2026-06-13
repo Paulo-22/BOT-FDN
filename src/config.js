@@ -9,35 +9,35 @@ module.exports = {
   cargos: {
     // Cargos que podem acessar comandos administrativos
     admin:          '1515212078137479268',
-    fundador:          '1265868312504696833',
-    subFundador:       '1265868313662197851',
-    gerente:    '1265868318548557894',
+    lider:          '1265868312504696833',
+    subLider:       '1265868313662197851',
+    coordenador:    '1265868318548557894',
 
     // Hierarquia da facção (ordem crescente)
     hierarquia: [
-      { nome: 'Recruta',      id: 'ID_CARGO_RECRUTA' },
-      { nome: 'Membro',       id: 'ID_CARGO_MEMBRO' },
-      { nome: 'Veterano',     id: 'ID_CARGO_VETERANO' },
-      { nome: 'Elite',        id: 'ID_CARGO_ELITE' },
-      { nome: 'Sub-dono',      id: '1265868319890608330' },
-      { nome: 'Dono',  id: '1265868318548557894' },
-      { nome: 'Sub-Fundador',    id: '1265868313662197851' },
-      { nome: 'Fundador',        id: '1265868312504696833' },
+      { nome: 'Recruta',      id: '1265868327239024803' },
+      { nome: 'Membro',       id: '1265868325662101605' },
+      { nome: 'Veterano',     id: '1265868325033082901' },
+      { nome: 'Elite',        id: '1265868320725270581' },
+      { nome: 'Oficial',      id: '1265868319890608330' },
+      { nome: 'Coordenador',  id: '1265868318548557894' },
+      { nome: 'Sub-Líder',    id: '1265868313662197851' },
+      { nome: 'Líder',        id: '1265868312504696833' },
     ],
 
     // Cargo especial
-    exonerado: 'ID_CARGO_EXONERADO',
-    semCargo:  'ID_CARGO_SEM_CARGO',
+    exonerado: '1265868381962108961',
+    semCargo:  '1265868402178920559',
 
     // Cargos com permissão para cada ação
-    podePRomover:    ['1265868312504696833', '1265868312504696833', '1265868364597821521'],
-    podeRebaixar:    ['1265868312504696833', '1265868312504696833', '1265868364597821521'],
-    podeAdvertir:    ['1265868312504696833', '1265868312504696833', '1265868365650722897', 'ID_CARGO_OFICIAL'],
-    podeExonerar:    ['1265868312504696833', '1265868312504696833'],
-    podeAprovarAusencia: ['1265868312504696833', '1265868312504696833', '1265868365650722897'],
-    podeAprovarRecrutamento: ['1265868312504696833', '1265868312504696833', '1265868365650722897'],
-    podeDashboard:   ['1265868312504696833', '1265868312504696833', '1265868365650722897'],
-    podeTicketStaff: ['1265868312504696833', '1265868312504696833', '1265868365650722897', 'ID_CARGO_OFICIAL'],
+    podePRomover:    ['1265868312504696833', '1265868313662197851', 's'],
+    podeRebaixar:    ['1265868312504696833', '1265868313662197851', 's'],
+    podeAdvertir:    ['1265868312504696833', '1265868313662197851', 's', 'ID_CARGO_OFICIAL'],
+    podeExonerar:    ['1265868312504696833', '1265868313662197851'],
+    podeAprovarAusencia: ['1265868312504696833', '1265868313662197851', 's'],
+    podeAprovarRecrutamento: ['1265868312504696833', '1265868313662197851', 's'],
+    podeDashboard:   ['1265868312504696833', '1265868313662197851', 's'],
+    podeTicketStaff: ['1265868312504696833', '1265868313662197851', 's', 'ID_CARGO_OFICIAL'],
   },
 
   // ============================================
@@ -47,7 +47,7 @@ module.exports = {
     // Canais funcionais
     registro:        '1389278353143369818',
     recrutamento:    '1389279188724224062',
-    analise:         '1389279206390894784',
+    analise:         '1515128153721274550',
     batePonto:       '1304235934073749644',
     ausencias:       '1304237408425873488',
     adminPanel:      '1265868552099991608',
@@ -69,15 +69,15 @@ module.exports = {
 
     // Canais de logs
     logs: {
-      registro:       '1515126923733499955',
+      registro:       '1389278380414734356,1515126923733499955',
       recrutamento:   '1515126992729673738',
-      promocoes:      '1515127175420969201',
-      rebaixamentos:  '1515127343004520478',
-      advertencias:   '1515127418145476629',
-      exoneracoes:    '1515127460276994098',
+      promocoes:      '1265868579174355071',
+      rebaixamentos:  '1265868581967626333',
+      advertencias:   '1265868580747219046',
+      exoneracoes:    '1265868582722601064',
       ausencias:      '1515127504212594778',
       tickets:        '1515124815042711732',
-      batePonto:      '1389344544524468324',
+      batePonto:      '1389278729120776192',
     },
   },
 

@@ -24,7 +24,7 @@ module.exports = {
     if (resultado.erro) return; // Sem ponto ativo, ignora
 
     // Log
-    await logger.logBatePonto(oldState.client, { usuario: userId, tempo_total: resultado.tempoTotal }, 'DESLIGAR');
+    await logger.logBatePonto(oldState.client, { usuario: userId, tempo_total: resultado.tempoTotal, inicio: resultado.hora.inicio, automatico: true }, 'DESLIGAR');
 
     // DM para o usuário
     try {

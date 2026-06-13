@@ -131,7 +131,7 @@ async function handleDesligar(interaction) {
     });
   }
 
-  await logger.logBatePonto(interaction.client, { usuario: interaction.user.id, tempo_total: resultado.tempoTotal }, 'DESLIGAR');
+  await logger.logBatePonto(interaction.client, { usuario: interaction.user.id, tempo_total: resultado.tempoTotal, inicio: resultado.hora.inicio, automatico: false }, 'DESLIGAR');
 
   return interaction.reply({
     embeds: [new EmbedBuilder().setColor(config.cores.neutro)
