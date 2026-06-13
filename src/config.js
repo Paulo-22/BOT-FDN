@@ -9,9 +9,9 @@ module.exports = {
   cargos: {
     // Cargos que podem acessar comandos administrativos
     admin:          '1515212078137479268',
-    fundador:          'ID_CARGO_LIDER',
-    subFundador:       'ID_CARGO_SUB_LIDER',
-    gerente:    'ID_CARGO_COORDENADOR',
+    fundador:          '1265868312504696833',
+    subFundador:       '1265868313662197851',
+    gerente:    '1265868318548557894',
 
     // Hierarquia da facção (ordem crescente)
     hierarquia: [
