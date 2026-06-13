@@ -1,0 +1,179 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id            Int      @id @default(autoincrement())
+  discord_id    String   @unique
+  discord_nome  String
+  nome_mta      String
+  id_gamer      String   @unique
+  telefone      String?
+  cargo         String   @default("Sem Cargo")
+  data_registro DateTime @default(now())
+
+  horas                 Hora[]
+  ausencias             Ausencia[]
+  advertencias          Advertencia[]  @relation("UsuarioAdvertido")
+  advertenciasAplicadas Advertencia[]  @relation("ResponsavelAdvertencia")
+  promocoes             Promocao[]     @relation("UsuarioPromovido")
+  promocoesFeitas       Promocao[]     @relation("ResponsavelPromocao")
+  rebaixamentos         Rebaixamento[] @relation("UsuarioRebaixado")
+  rebaixamentosFeitos   Rebaixamento[] @relation("ResponsavelRebaixamento")
+  exoneracoes           Exoneracao[]   @relation("UsuarioExonerado")
+  exoneracoesFeitas     Exoneracao[]   @relation("ResponsavelExoneracao")
+  punicoes              Punicao[]      @relation("UsuarioPunido")
+  punicoesAplicadas     Punicao[]      @relation("ResponsavelPunicao")
+  transferencias        Transferencia[] @relation("UsuarioTransferido")
+
+  @@map("usuarios")
+}
+
+model Hora {
+  id          Int       @id @default(autoincrement())
+  usuario     String
+  inicio      DateTime
+  fim         DateTime?
+  tempo_total Int?
+  canal       String?
+  ativo       Boolean   @default(true)
+
+  user Usuario @relation(fields: [usuario], references: [discord_id])
+
+  @@map("horas")
+}
+
+model Ausencia {
+  id          Int      @id @default(autoincrement())
+  usuario     String
+  motivo      String
+  data_inicio String
+  data_fim    String
+  status      String   @default("PENDENTE")
+  responsavel String?
+  criado_em   DateTime @default(now())
+
+  user Usuario @relation(fields: [usuario], references: [discord_id])
+
+  @@map("ausencias")
+}
+
+model Advertencia {
+  id          Int      @id @default(autoincrement())
+  usuario     String
+  responsavel String
+  motivo      String
+  data        DateTime @default(now())
+
+  user Usuario @relation("UsuarioAdvertido",       fields: [usuario],     references: [discord_id])
+  resp Usuario @relation("ResponsavelAdvertencia", fields: [responsavel], references: [discord_id])
+
+  @@map("advertencias")
+}
+
+model Punicao {
+  id          Int      @id @default(autoincrement())
+  usuario     String
+  responsavel String
+  tipo        String   // PUNICAO_1, PUNICAO_2, PUNICAO_3, REMOCAO
+  motivo      String
+  data        DateTime @default(now())
+
+  user Usuario @relation("UsuarioPunido",      fields: [usuario],     references: [discord_id])
+  resp Usuario @relation("ResponsavelPunicao", fields: [responsavel], references: [discord_id])
+
+  @@map("punicoes")
+}
+
+model Promocao {
+  id           Int      @id @default(autoincrement())
+  usuario      String
+  cargo_antigo String
+  cargo_novo   String
+  motivo       String
+  responsavel  String
+  data         DateTime @default(now())
+
+  user Usuario @relation("UsuarioPromovido",    fields: [usuario],     references: [discord_id])
+  resp Usuario @relation("ResponsavelPromocao", fields: [responsavel], references: [discord_id])
+
+  @@map("promocoes")
+}
+
+model Rebaixamento {
+  id           Int      @id @default(autoincrement())
+  usuario      String
+  cargo_antigo String
+  cargo_novo   String
+  motivo       String
+  responsavel  String
+  data         DateTime @default(now())
+
+  user Usuario @relation("UsuarioRebaixado",        fields: [usuario],     references: [discord_id])
+  resp Usuario @relation("ResponsavelRebaixamento", fields: [responsavel], references: [discord_id])
+
+  @@map("rebaixamentos")
+}
+
+model Exoneracao {
+  id          Int      @id @default(autoincrement())
+  usuario     String
+  motivo      String
+  responsavel String
+  data        DateTime @default(now())
+
+  user Usuario @relation("UsuarioExonerado",      fields: [usuario],     references: [discord_id])
+  resp Usuario @relation("ResponsavelExoneracao", fields: [responsavel], references: [discord_id])
+
+  @@map("exoneracoes")
+}
+
+model Transferencia {
+  id           Int      @id @default(autoincrement())
+  usuario      String
+  faccao_atual String
+  motivo       String
+  status       String   @default("PENDENTE")
+  responsavel  String?
+  criado_em    DateTime @default(now())
+
+  user Usuario @relation("UsuarioTransferido", fields: [usuario], references: [discord_id])
+
+  @@map("transferencias")
+}
+
+model Candidatura {
+  id           Int      @id @default(autoincrement())
+  discord_id   String
+  discord_nome String
+  nome         String
+  id_gamer     String
+  horas        String
+  experiencia  String
+  motivo       String
+  status       String   @default("PENDENTE")
+  responsavel  String?
+  criado_em    DateTime @default(now())
+
+  @@map("candidaturas")
+}
+
+model Ticket {
+  id         Int       @id @default(autoincrement())
+  canal_id   String    @unique
+  autor_id   String
+  tipo       String
+  status     String    @default("ABERTO")
+  transcript String?
+  criado_em  DateTime  @default(now())
+  fechado_em DateTime?
+
+  @@map("tickets")
+}
