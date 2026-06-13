@@ -154,35 +154,34 @@ async function logTicket(client, ticket, acao) {
 async function logBatePonto(client, dados, acao) {
   const iniciado = acao === 'LIGAR';
   const agora = Math.floor(Date.now() / 1000);
-  const verde = '<:iconeverde:1515370893998555257>';
 
-  let descricao = '';
+  let titulo, descricao;
 
   if (iniciado) {
+    titulo = 'PONTO INICIADO';
     descricao =
-      `${verde} **MEMBRO:** <@${dados.usuario}>\n` +
-      `${verde} **INÍCIO:** <t:${agora}:t>`;
+      `🟢 **MEMBRO:** <@${dados.usuario}>\n` +
+      `🟢 **INÍCIO:** <t:${agora}:t>`;
   } else {
     const tsInicio = dados.inicio
       ? Math.floor(new Date(dados.inicio).getTime() / 1000)
       : agora;
-    const total = dados.tempo_total ? formatarTempo(dados.tempo_total) : '00:00';
-    const motivo = dados.automatico
-      ? '• O ponto foi fechado automaticamente, o membro saiu da call.'
-      : '• O membro encerrou o ponto manualmente.';
+    const total = dados.tempo_total ? formatarTempo(dados.tempo_total) : '00h 00min';
+    const motivo = dados.automatico ? 'Saiu do canal de voz.' : 'Encerrou manualmente.';
 
+    titulo = 'PONTO FINALIZADO';
     descricao =
-      `${verde} **MEMBRO:** <@${dados.usuario}>\n` +
-      `${verde} **INÍCIO:** <t:${tsInicio}:t>\n` +
-      `${verde} **TÉRMINO:** <t:${agora}:t>\n` +
-      `${verde} **TOTAL:** ${total}\n` +
-      `${motivo}`;
+      `🟢 **MEMBRO:** <@${dados.usuario}>\n` +
+      `🟢 **INÍCIO:** <t:${tsInicio}:t>\n` +
+      `🟢 **TÉRMINO:** <t:${agora}:t>\n` +
+      `🟢 **TOTAL:** ${total}\n` +
+      `🟢 **MOTIVO:** ${motivo}`;
   }
 
   const embed = new EmbedBuilder()
     .setColor(iniciado ? config.cores.sucesso : config.cores.neutro)
+    .setTitle(titulo)
     .setDescription(descricao)
-    .setFooter({ text: 'FDN — Bate-Ponto' })
     .setTimestamp();
 
   await enviarLog(client, 'batePonto', embed);
@@ -191,8 +190,7 @@ async function logBatePonto(client, dados, acao) {
 function formatarTempo(segundos) {
   const h = Math.floor(segundos / 3600);
   const m = Math.floor((segundos % 3600) / 60);
-  const s = segundos % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}min`;
 }
 
 module.exports = {
