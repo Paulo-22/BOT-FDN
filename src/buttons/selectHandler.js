@@ -69,9 +69,8 @@ async function handleUserSelecionado(interaction, acao, userId) {
   // ── Promoção → selecionar o novo cargo ───────────────────────────────────
   if (acao === 'promover') {
     const cargoAtualIdx = _getCargoAtualIdx(membro);
-
-    // Filtra somente cargos acima do atual
     const cargosDisponiveis = config.cargos.hierarquia.slice(cargoAtualIdx + 1);
+
     if (!cargosDisponiveis.length) {
       return interaction.update({
         embeds: [new EmbedBuilder().setColor(config.cores.aviso)
@@ -80,10 +79,11 @@ async function handleUserSelecionado(interaction, acao, userId) {
       });
     }
 
+    // Apenas update — sem showModal nesta etapa
     return interaction.update({
       embeds: [new EmbedBuilder().setColor(config.cores.sucesso)
         .setTitle('⬆️ Promover Membro')
-        .setDescription(`Membro selecionado: **${nome}**\nSelecione o **novo cargo**:`)],
+        .setDescription(`Membro selecionado: **${nome}**\nSelecione o **novo cargo** abaixo:`)],
       components: [
         new ActionRowBuilder().addComponents(
           new RoleSelectMenuBuilder()
@@ -99,12 +99,12 @@ async function handleUserSelecionado(interaction, acao, userId) {
   // ── Rebaixamento → selecionar o novo cargo ────────────────────────────────
   if (acao === 'rebaixar') {
     const cargoAtualIdx = _getCargoAtualIdx(membro);
-
     const cargosDisponiveis = config.cargos.hierarquia.slice(0, cargoAtualIdx);
+
     if (!cargosDisponiveis.length) {
       return interaction.update({
         embeds: [new EmbedBuilder().setColor(config.cores.aviso)
-          .setDescription(`⚠️ **${nome}** não pode ser rebaixado (cargo mínimo ou sem cargo na hierarquia).`)],
+          .setDescription(`⚠️ **${nome}** não pode ser rebaixado (já está no cargo mínimo ou sem cargo na hierarquia).`)],
         components: [],
       });
     }
@@ -112,7 +112,7 @@ async function handleUserSelecionado(interaction, acao, userId) {
     return interaction.update({
       embeds: [new EmbedBuilder().setColor(config.cores.erro)
         .setTitle('⬇️ Rebaixar Membro')
-        .setDescription(`Membro selecionado: **${nome}**\nSelecione o **novo cargo**:`)],
+        .setDescription(`Membro selecionado: **${nome}**\nSelecione o **novo cargo** abaixo:`)],
       components: [
         new ActionRowBuilder().addComponents(
           new RoleSelectMenuBuilder()
@@ -125,17 +125,12 @@ async function handleUserSelecionado(interaction, acao, userId) {
     });
   }
 
-  // ── Advertir → modal de motivo ────────────────────────────────────────────
+  // ── Advertir → showModal direto (sem update antes — mesma interação) ──────
   if (acao === 'advertir') {
-    await interaction.update({
-      embeds: [new EmbedBuilder().setColor(config.cores.aviso)
-        .setDescription(`⚠️ Abrindo formulário de advertência para **${nome}**...`)],
-      components: [],
-    });
     return await interaction.showModal(modals.modalMotivoSimples('advertencia', userId, nome));
   }
 
-  // ── Exonerar → confirmação + modal de motivo ──────────────────────────────
+  // ── Exonerar → update com confirmação (sem showModal — botão abrirá depois) ─
   if (acao === 'exonerar') {
     return interaction.update({
       embeds: [new EmbedBuilder().setColor(config.cores.erro)
@@ -164,13 +159,8 @@ async function handleUserSelecionado(interaction, acao, userId) {
     });
   }
 
-  // ── Adicionar / Remover Horas ─────────────────────────────────────────────
+  // ── Adicionar / Remover Horas → showModal direto (sem update antes) ───────
   if (acao === 'add_horas' || acao === 'rem_horas') {
-    await interaction.update({
-      embeds: [new EmbedBuilder().setColor(config.cores.principal)
-        .setDescription(`Abrindo formulário para **${nome}**...`)],
-      components: [],
-    });
     return await interaction.showModal(
       modals.modalGerenciarHorasAuto(acao === 'add_horas' ? 'ADD' : 'REM', userId),
     );
@@ -178,6 +168,7 @@ async function handleUserSelecionado(interaction, acao, userId) {
 
   // ── Consultar Membro ──────────────────────────────────────────────────────
   if (acao === 'consultar') {
+    // deferUpdate para poder usar editReply depois (operação assíncrona longa)
     await interaction.deferUpdate();
     return await handleConsultarMembro(interaction, userId);
   }
@@ -188,10 +179,10 @@ async function handleUserSelecionado(interaction, acao, userId) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function handleCargoSelecionado(interaction, acao, userId, roleId) {
-  const role  = await interaction.guild.roles.fetch(roleId).catch(() => null);
+  const role   = await interaction.guild.roles.fetch(roleId).catch(() => null);
   const membro = await interaction.guild.members.fetch(userId).catch(() => null);
-  const nomeCargo = role ? role.name : roleId;
-  const nomeMembro = membro ? membro.displayName : `<@${userId}>`;
+  const nomeCargo  = role   ? role.name           : roleId;
+  const nomeMembro = membro ? membro.displayName  : `<@${userId}>`;
 
   // Valida se o cargo está na hierarquia FDN
   const cargoFDN = config.cargos.hierarquia.find(c => c.id === roleId);
@@ -203,14 +194,7 @@ async function handleCargoSelecionado(interaction, acao, userId, roleId) {
     });
   }
 
-  await interaction.update({
-    embeds: [new EmbedBuilder().setColor(config.cores.principal)
-      .setDescription(
-        `${acao === 'promocao' ? '⬆️' : '⬇️'} **${nomeMembro}** → **${nomeCargo}**\n\nAbrindo formulário de motivo...`,
-      )],
-    components: [],
-  });
-
+  // showModal direto — não chamar update antes na mesma interação
   return await interaction.showModal(modals.modalMotivo(acao, userId, roleId, nomeCargo));
 }
 
