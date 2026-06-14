@@ -34,6 +34,18 @@ function modalCandidatura() {
     );
 }
 
+// ── Edital (Formulário de Recrutamento) ──────
+
+function modalEditalNome() {
+  return new ModalBuilder()
+    .setCustomId('modal_edital_nome')
+    .setTitle('Formulário de Registro')
+    .addComponents(
+      row(input('nick', 'QUAL SEU NOME?', TextInputStyle.Short, true, 32)
+        .setPlaceholder('Digite seu nome')),
+    );
+}
+
 // ── Transferência ────────────────────────────
 
 function modalTransferencia() {
@@ -196,6 +208,7 @@ function row(component) {
 module.exports = {
   modalRegistro,
   modalCandidatura,
+  modalEditalNome,
   modalTransferencia,
   modalAusencia,
   modalPunicao,

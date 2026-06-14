@@ -38,6 +38,10 @@ function podeAprovarRecrutamento(member) {
   return temPermissao(member, config.cargos.podeAprovarRecrutamento);
 }
 
+function podeAnalisarEdital(member) {
+  return temPermissao(member, config.cargos.podeAnalisarEdital);
+}
+
 function podeDashboard(member) {
   return temPermissao(member, config.cargos.podeDashboard);
 }
@@ -66,6 +70,7 @@ module.exports = {
   podeExonerar,
   podeAprovarAusencia,
   podeAprovarRecrutamento,
+  podeAnalisarEdital,
   podeDashboard,
   podeTicketStaff,
   embedSemPermissao,

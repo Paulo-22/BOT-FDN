@@ -1,7 +1,7 @@
 // src/logs/logger.js
 // Sistema centralizado de logs para canais do Discord
 
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const config = require('../config');
 
 async function enviarLog(client, tipo, embed) {
@@ -14,6 +14,45 @@ async function enviarLog(client, tipo, embed) {
   } catch (err) {
     console.error(`[LOG ERROR] Falha ao enviar log (${tipo}):`, err.message);
   }
+}
+
+async function logEdital(client, edital, acao, responsavel) {
+  const aprovado = acao === 'APROVADA';
+  const cor = aprovado ? config.cores.sucesso : config.cores.erro;
+
+  const linhas = [
+    `• **FORMULÁRIO ${aprovado ? 'APROVADO' : 'REPROVADO'} | FDN**`,
+    '',
+    `Parabéns <@${edital.discord_id}> [${edital.discord_nome}] !`,
+    aprovado
+      ? 'Seu edital foi **analisado** e **aprovado** com sucesso.\nConfira as instruções enviadas no seu **privado** para dar continuidade e avançar para o próximo passo.'
+      : 'Seu edital foi **analisado** e **reprovado**.\nVocê poderá tentar novamente após o período de espera definido pela staff.',
+    '',
+    `• **ANALISADO POR:**`,
+    `<@${responsavel}>`,
+  ];
+
+  const embed = new EmbedBuilder()
+    .setColor(cor)
+    .setDescription(linhas.join('\n'));
+
+  const canalId = config.canais.resultadoEdital;
+  if (!canalId || canalId.startsWith('ID_')) return;
+  const canal = await client.channels.fetch(canalId).catch(() => null);
+  if (!canal) return;
+
+  await canal.send({
+    embeds: [embed],
+    components: [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('_disabled')
+          .setLabel(aprovado ? 'Aprovado' : 'Reprovado')
+          .setStyle(aprovado ? ButtonStyle.Success : ButtonStyle.Danger)
+          .setDisabled(true),
+      ),
+    ],
+  });
 }
 
 async function logRegistro(client, usuario, novoNick) {
@@ -197,6 +236,7 @@ function formatarTempo(segundos) {
 module.exports = {
   logRegistro,
   logRecrutamento,
+  logEdital,
   logPromocao,
   logRebaixamento,
   logAdvertencia,

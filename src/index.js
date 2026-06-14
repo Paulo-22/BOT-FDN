@@ -1,7 +1,5 @@
 const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField, ChannelType, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
 
-const TOKEN = 'MTUxNDk0ODE1MTI5ODIzMjM3Mg.GapP7T.A4D56mHwuKaDbWEgdHI7y7FbvYNsKN1Re6rA50';
-
 // IDs de configuração
 const CATEGORY_ID = '1515681495367548952';
 const CANAL_RESULTADO_ID = '1389279206390894784';

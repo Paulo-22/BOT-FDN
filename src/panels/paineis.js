@@ -59,6 +59,29 @@ function painelRecrutamento() {
 }
 
 // ─────────────────────────────────────────────
+// EDITAL (FORMULÁRIO DE RECRUTAMENTO)
+// ─────────────────────────────────────────────
+function painelEdital() {
+  const embed = new EmbedBuilder()
+    .setColor(config.cores.principal)
+    .setTitle('Formulário de Registro')
+    .setDescription(
+      'Este formulário será enviado a **FDN**.\n' +
+      'Não compartilhe sua senha ou outras informações confidenciais.'
+    )
+    .setImage(BANNER_FDN);
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('btn_iniciar_edital')
+      .setLabel('INICIAR FORMULÁRIO')
+      .setStyle(ButtonStyle.Secondary),
+  );
+
+  return { embeds: [embed], components: [row] };
+}
+
+// ─────────────────────────────────────────────
 // TRANSFERÊNCIA
 // ─────────────────────────────────────────────
 function painelTransferencia() {
@@ -258,6 +281,7 @@ function painelAdmin() {
 module.exports = {
   painelRegistro,
   painelRecrutamento,
+  painelEdital,
   painelTransferencia,
   painelBatePonto,
   painelAusencias,

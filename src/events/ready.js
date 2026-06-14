@@ -15,14 +15,14 @@ module.exports = {
     });
 
     // Descomente APENAS na primeira execução para enviar os painéis
-     //await configurarPaineis(client);
+     await configurarPaineis(client);
   },
 };
 
 async function configurarPaineis(client) {
   const pares = [
     { canalId: config.canais.registro,     painel: paineis.painelRegistro() },
-    { canalId: config.canais.recrutamento, painel: paineis.painelRecrutamento() },
+    { canalId: config.canais.recrutamento, painel: paineis.painelEdital() },
     { canalId: config.canais.batePonto,    painel: paineis.painelBatePonto() },
     { canalId: config.canais.ausencias,    painel: paineis.painelAusencias() },
     { canalId: config.canais.punicao,      painel: paineis.painelPunicao() },

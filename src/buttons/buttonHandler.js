@@ -12,6 +12,7 @@ const {
 const config       = require('../config');
 const modals       = require('../modals/modals');
 const horasService = require('../services/horasService');
+const editalService = require('../services/editalService');
 const { prisma }   = require('../database/client');
 const logger       = require('../logs/logger');
 const perm         = require('../utils/permissoes');
@@ -27,6 +28,13 @@ async function handleButton(interaction) {
     // ── Modais diretos ────────────────────────────────────────────────────────
     if (customId === 'btn_registro')           return await interaction.showModal(modals.modalRegistro());
     if (customId === 'btn_candidatar')         return await interaction.showModal(modals.modalCandidatura());
+    if (customId === 'btn_iniciar_edital')     return await interaction.showModal(modals.modalEditalNome());
+    if (customId.startsWith('btn_responder_edital_'))
+      return await editalService.iniciarColetaRespostas(interaction);
+    if (customId.startsWith('btn_aprovar_edital_'))
+      return await handleAprovarEdital(interaction, customId.replace('btn_aprovar_edital_', ''));
+    if (customId.startsWith('btn_reprovar_edital_'))
+      return await handleReprovarEdital(interaction, customId.replace('btn_reprovar_edital_', ''));
     if (customId === 'btn_transferencia')      return await interaction.showModal(modals.modalTransferencia());
     if (customId === 'btn_solicitar_ausencia') return await interaction.showModal(modals.modalAusencia());
 
@@ -379,6 +387,20 @@ const fmt = arr =>
       .setTimestamp()
   ]
 });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EDITAL (FORMULÁRIO DE RECRUTAMENTO)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function handleAprovarEdital(interaction, id) {
+  if (!perm.podeAnalisarEdital(interaction.member)) return semPermissao(interaction);
+  return await editalService.aprovarEdital(interaction, id);
+}
+
+async function handleReprovarEdital(interaction, id) {
+  if (!perm.podeAnalisarEdital(interaction.member)) return semPermissao(interaction);
+  return await editalService.reprovarEdital(interaction, id);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

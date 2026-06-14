@@ -6,6 +6,7 @@ const config       = require('../config');
 const { prisma }   = require('../database/client');
 const logger       = require('../logs/logger');
 const horasService = require('../services/horasService');
+const editalService = require('../services/editalService');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ROTEADOR
@@ -17,6 +18,7 @@ async function handleModal(interaction) {
   try {
     if (customId === 'modal_registro')         return await handleRegistro(interaction);
     if (customId === 'modal_candidatura')      return await handleCandidatura(interaction);
+    if (customId === 'modal_edital_nome')      return await handleEditalNome(interaction);
     if (customId === 'modal_transferencia')    return await handleTransferencia(interaction);
     if (customId === 'modal_ausencia')         return await handleAusencia(interaction);
     if (customId === 'modal_advertencia')      return await handleAdvertencia(interaction);
@@ -169,6 +171,15 @@ async function handleRegistro(interaction) {
     ],
     ephemeral: true,
   });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EDITAL (FORMULÁRIO DE RECRUTAMENTO)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function handleEditalNome(interaction) {
+  const nick = interaction.fields.getTextInputValue('nick').trim();
+  return await editalService.criarCanalEdital(interaction, nick);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

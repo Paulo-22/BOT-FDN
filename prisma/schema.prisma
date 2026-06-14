@@ -166,6 +166,21 @@ model Candidatura {
   @@map("candidaturas")
 }
 
+model Edital {
+  id           Int       @id @default(autoincrement())
+  discord_id   String
+  discord_nome String
+  nick         String
+  canal_id     String    @unique
+  respostas    Json
+  status       String    @default("PENDENTE")
+  responsavel  String?
+  criado_em    DateTime  @default(now())
+  analisado_em DateTime?
+
+  @@map("editais")
+}
+
 model Ticket {
   id         Int       @id @default(autoincrement())
   canal_id   String    @unique

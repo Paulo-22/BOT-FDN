@@ -35,6 +35,12 @@ module.exports = {
     podeAprovarRecrutamento: ['1265868309467762729', '1265868312504696833', '1265868313662197851'],
     podeDashboard:           ['1265868309467762729', '1265868312504696833', '1265868313662197851'],
     podeTicketStaff:         ['1265868309467762729', '1265868312504696833', '1265868313662197851', '1265868318548557894'],
+
+    // Permissões do sistema de EDITAL (formulário de recrutamento)
+    podeAnalisarEdital: ['1265868396843499530', '1265868373062062162', '1265868313662197851'],
+
+    // Cargos atribuídos ao aprovar o edital
+    cargosAprovacaoEdital: ['1265868360613101658', '1265868398194327627'],
   },
 
   // ============================================
@@ -50,6 +56,11 @@ module.exports = {
     punicao:          '1265868554788536383',
     tickets:          '1265868540494221435',
     categoriaTickets: '1515129942344466512',
+
+    // Sistema de EDITAL
+    categoriaEdital: '1515681495367548952',
+    resultadoEdital: '1389279206390894784',
+    analiseEdital:   '1515128153721274550',
 
     voiceAutorizados: [
       '1265868591971045408',
