@@ -16,18 +16,16 @@ async function enviarLog(client, tipo, embed) {
   }
 }
 
-async function logRegistro(client, usuario) {
-  const novoNick = `𝑭𝑫𝑵 » ${usuario.nome_mta} ${usuario.id_gamer}`;
+async function logRegistro(client, usuario, novoNick) {
+  novoNick = novoNick || `𝑭𝑫𝑵 » ${usuario.nome_mta} ${usuario.id_gamer}`;
 
   const embed = new EmbedBuilder()
     .setColor(config.cores.sucesso)
-    .setTitle('📋 NOVO REGISTRO')
+    .setTitle('NOVO REGISTRO | FDN')
     .setDescription(
-      `🟢 **MEMBRO:** <@${usuario.discord_id}>\n` +
-      `🟢 **NICK:** ${novoNick}\n` +
-      `🟢 **LOGIN:** ${usuario.login}\n` +
-      `🟢 **ID:** ${usuario.id_gamer}\n` +
-      `🟢 **CARGO:** Verificado + Observação`
+      `👤 **MEMBRO:** <@${usuario.discord_id}> [${novoNick}]\n` +
+      `👤 **LOGIN:** ${usuario.login}\n` +
+      `🆔 **ID:** ${usuario.id_gamer}`
     )
     .setTimestamp()
     .setFooter({ text: 'FDN — Sistema de Registro' });

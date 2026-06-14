@@ -83,6 +83,15 @@ async function handleRegistro(interaction) {
   const login    = interaction.fields.getTextInputValue('login').trim();
   const id_gamer = interaction.fields.getTextInputValue('id_gamer').trim();
 
+  // ── Validação do ID (somente números) ────────────────────────────────────
+  if (!/^\d+$/.test(id_gamer)) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder().setColor(config.cores.erro)
+        .setDescription('❌ O campo **ID na cidade** deve conter apenas números.')],
+      ephemeral: true,
+    });
+  }
+
   const existente = await prisma.usuario.findFirst({
     where: { OR: [{ discord_id: user.id }, { id_gamer }] },
   });
@@ -105,11 +114,24 @@ async function handleRegistro(interaction) {
     },
   });
 
+  // ── Montar e truncar o nick (limite do Discord: 32 caracteres) ─────────────
+  const sufixoId = ` ${id_gamer}`;
+  const prefixo  = '𝑭𝑫𝑵 » ';
+  const espacoNome = 32 - prefixo.length - sufixoId.length;
+  const nomeTruncado = nome_mta.length > espacoNome
+    ? nome_mta.slice(0, espacoNome).trim()
+    : nome_mta;
+  const novoNick = `${prefixo}${nomeTruncado}${sufixoId}`;
+
   // ── Renomear o membro no servidor ──────────────────────────────────────────
-  const novoNick = `𝑭𝑫𝑵 » ${nome_mta} ${id_gamer}`;
   const membro = await interaction.guild.members.fetch(user.id).catch(() => null);
+  let nickAlterado = true;
+
   if (membro) {
-    await membro.setNickname(novoNick).catch(() => {});
+    await membro.setNickname(novoNick).catch((err) => {
+      nickAlterado = false;
+      console.error(`[REGISTRO] Falha ao alterar nick de ${user.tag} (${user.id}):`, err.message);
+    });
 
     // ── Remover cargo "Sem Cargo" e atribuir os 3 cargos ───────────────────
     const cargoSemCargo = config.cargos.semCargo;
@@ -127,7 +149,11 @@ async function handleRegistro(interaction) {
     }
   }
 
-  await logger.logRegistro(interaction.client, usuario);
+  await logger.logRegistro(interaction.client, usuario, novoNick);
+
+  const descricaoNick = nickAlterado
+    ? `Seu nome no servidor foi atualizado para:\n**${novoNick}**\n\n`
+    : `⚠️ Não foi possível atualizar seu nome automaticamente. Peça a um administrador para te renomear para:\n**${novoNick}**\n\n`;
 
   return interaction.reply({
     embeds: [
@@ -136,7 +162,7 @@ async function handleRegistro(interaction) {
         .setTitle('✅ Registro Concluído!')
         .setDescription(
           `Seu cadastro na **FDN** foi realizado com sucesso!\n\n` +
-          `Seu nome no servidor foi atualizado para:\n**${novoNick}**\n\n` +
+          descricaoNick +
           `Você recebeu os cargos de **Verificado** e **Observação** automaticamente.`
         )
         .addFields(
