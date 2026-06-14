@@ -33,7 +33,7 @@ async function logEdital(client, edital, acao, responsavel) {
   ];
 
   const IMG_APROVADO = 'https://i.ibb.co/N2Jj15gJ/Chat-GPT-Image-14-de-jun-de-2026-13-18-18.png';
-  const IMG_REPROVADO = 'https://i.ibb.co/PZV7Dm1Z';
+  const IMG_REPROVADO = 'https://i.ibb.co/dwkBT7vS/Chat-GPT-Image-14-de-jun-de-2026-13-23-58.png';
 
   const embed = new EmbedBuilder()
     .setColor(cor)
