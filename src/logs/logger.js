@@ -32,9 +32,13 @@ async function logEdital(client, edital, acao, responsavel) {
     `<@${responsavel}>`,
   ];
 
+  const IMG_APROVADO = 'https://i.ibb.co/vvL92fX1/aprovado.png';
+  const IMG_REPROVADO = 'https://i.ibb.co/1YZ0NCTD/reprovado.png';
+
   const embed = new EmbedBuilder()
     .setColor(cor)
-    .setDescription(linhas.join('\n'));
+    .setDescription(linhas.join('\n'))
+    .setImage(aprovado ? IMG_APROVADO : IMG_REPROVADO);
 
   const canalId = config.canais.resultadoEdital;
   if (!canalId || canalId.startsWith('ID_')) return;
