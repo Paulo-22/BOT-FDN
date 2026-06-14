@@ -192,7 +192,7 @@ async function iniciarColetaRespostas(interaction) {
       return await encerrarPorTempo(canal, edital, respostas);
     }
 
-await canal.send({
+    await canal.send({
       embeds: [
         new EmbedBuilder()
           .setColor(config.cores.principal)
@@ -305,12 +305,30 @@ function montarEmbedsResumo(edital, respostas) {
   const embeds = [];
   const itens = Object.values(respostas);
 
-  // Discord limita 25 campos por embed; dividimos em blocos de 10
-  const BLOCO = 10;
-  for (let i = 0; i < itens.length; i += BLOCO) {
-    const bloco = itens.slice(i, i + BLOCO);
+  // Monta o texto de todas as perguntas/respostas em formato compacto
+  const linhas = itens.map((item, idx) =>
+    `**${idx + 1}º — ${item.pergunta}**\n${item.resposta || '(sem resposta)'}`
+  );
+
+  // Discord limita 4096 caracteres na description; dividimos em blocos seguros
+  const LIMITE = 3500;
+  const blocos = [];
+  let atual = '';
+
+  for (const linha of linhas) {
+    if ((atual + '\n\n' + linha).length > LIMITE) {
+      blocos.push(atual);
+      atual = linha;
+    } else {
+      atual = atual ? `${atual}\n\n${linha}` : linha;
+    }
+  }
+  if (atual) blocos.push(atual);
+
+  for (let i = 0; i < blocos.length; i++) {
     const embed = new EmbedBuilder()
       .setColor(config.cores.info)
+      .setDescription(blocos[i])
       .setTimestamp();
 
     if (i === 0) {
@@ -319,19 +337,11 @@ function montarEmbedsResumo(edital, respostas) {
         .addFields(
           { name: '👤 Candidato', value: `<@${edital.discord_id}>`, inline: true },
           { name: '📛 Nick informado', value: edital.nick, inline: true },
-          { name: '📂 Canal', value: `<#${edital.canal_id}>`, inline: true },
+          { name: '📂 Canal', value: edital.canal_id, inline: true },
         );
     }
 
-    bloco.forEach((item, idx) => {
-      const numero = i + idx + 1;
-      embed.addFields({
-        name: `${numero}º — ${item.pergunta}`,
-        value: item.resposta || '(sem resposta)',
-      });
-    });
-
-    if (i + BLOCO >= itens.length) {
+    if (i === blocos.length - 1) {
       embed.setFooter({ text: `ID do Edital: ${edital.id}` });
     }
 
