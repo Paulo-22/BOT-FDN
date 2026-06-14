@@ -1,100 +1,52 @@
-// src/config.js
-// Configuração central do bot FDN
+// src/index.js
+// Ponto de entrada do bot FDN
 
-module.exports = {
-  // ============================================
-  // CARGOS DA FACÇÃO (IDs dos cargos no Discord)
-  // ============================================
-  cargos: {
-    admin:       '1515212078137479268',
-    lider:       '1265868309467762729',
-    subLider:    '1265868312504696833',
-    coordenador: '1265868313662197851',
+require('dotenv').config();
 
-    // Hierarquia completa (índice 0 = mais baixo)
-    hierarquia: [
-      { nome: 'Recruta',     id: '1265868360613101658' },
-      { nome: 'Membro',      id: '1265868359682228317' },
-      { nome: 'Veterano',    id: '1265868320725270581' },
-      { nome: 'Elite',       id: '1265868319890608330' },
-      { nome: 'Oficial',     id: '1265868318548557894' },
-      { nome: 'Coordenador', id: '1265868313662197851' },
-      { nome: 'Sub-Líder',   id: '1265868312504696833' },
-      { nome: 'Líder',       id: '1265868309467762729' },
-    ],
+const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
+const { conectar } = require('./database/client');
 
-    exonerado: '1265868381962108961',
-    semCargo:  '1265868402178920559',
+// ============================================================
+// INICIALIZAR CLIENT
+// ============================================================
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.DirectMessages,
+  ],
+  partials: [Partials.Channel, Partials.Message],
+});
 
-    // Permissões por ação
-    podePRomover:            ['1265868309467762729', '1265868312504696833', '1265868313662197851'],
-    podeRebaixar:            ['1265868309467762729', '1265868312504696833', '1265868313662197851'],
-    podeAdvertir:            ['1265868309467762729', '1265868312504696833', '1265868313662197851', '1265868318548557894'],
-    podeExonerar:            ['1265868309467762729', '1265868312504696833'],
-    podeAprovarAusencia:     ['1265868309467762729', '1265868312504696833', '1265868313662197851'],
-    podeAprovarRecrutamento: ['1265868309467762729', '1265868312504696833', '1265868313662197851'],
-    podeDashboard:           ['1265868309467762729', '1265868312504696833', '1265868313662197851'],
-    podeTicketStaff:         ['1265868309467762729', '1265868312504696833', '1265868313662197851', '1265868318548557894'],
+// ============================================================
+// CARREGAR EVENTOS AUTOMATICAMENTE
+// ============================================================
+const eventosDir = path.join(__dirname, 'events');
+const arquivosEventos = fs.readdirSync(eventosDir).filter(f => f.endsWith('.js'));
 
-    // Permissões do sistema de EDITAL (formulário de recrutamento)
-    podeAnalisarEdital: ['1265868396843499530', '1265868373062062162', '1265868313662197851'],
-
-    // Cargos atribuídos ao aprovar o edital
-    cargosAprovacaoEdital: ['1265868360613101658', '1265868398194327627'],
-  },
-
-  // ============================================
-  // CANAIS
-  // ============================================
-  canais: {
-    registro:         '1389278353143369818',
-    recrutamento:     '1389279188724224062',
-    analise:          '1515128153721274550',
-    batePonto:        '1304235934073749644',
-    ausencias:        '1304237408425873488',
-    adminPanel:       '1265868552099991608',
-    punicao:          '1265868554788536383',
-    tickets:          '1265868540494221435',
-    categoriaTickets: '1515129942344466512',
-
-    // Sistema de EDITAL
-    categoriaEdital: '1515681495367548952',
-    resultadoEdital: '1389279206390894784',
-    analiseEdital:   '1515128153721274550',
-
-    voiceAutorizados: [
-      '1265868591971045408',
-      '1265868593464217692',
-      '1362165240338321669',
-      '1297975693468242021',
-      '1265868594655527044',
-      '1265868597239218240',
-    ],
-
-    logs: {
-      registro:      '1389278380414734356',
-      recrutamento:  '1515125340421488741',
-      promocoes:     '1265868579174355071',
-      rebaixamentos: '1265868581967626333',
-      advertencias:  '1265868580747219046',
-      exoneracoes:   '1265868582722601064',
-      ausencias:     '1515127504212594778',
-      tickets:       '1515124815042711732',
-      batePonto:     '1389278729120776192',
-      punicoes:      '1265868580747219046',
-    },
-  },
-
-  // ============================================
-  // CORES
-  // ============================================
-cores: {
-  principal: 0xDC2626,
-  sucesso: 0x22C55E,
-  erro: 0xEF4444,
-  aviso: 0xF59E0B,
-  info: 0x3B82F6,
-  neutro: 0x6B7280,
-  gold: 0xFBBF24
+for (const arquivo of arquivosEventos) {
+  const evento = require(path.join(eventosDir, arquivo));
+  if (evento.once) {
+    client.once(evento.name, (...args) => evento.execute(...args));
+  } else {
+    client.on(evento.name, (...args) => evento.execute(...args));
+  }
+  console.log(`📡 Evento carregado: ${evento.name}`);
 }
-};
+
+// ============================================================
+// INICIAR
+// ============================================================
+async function iniciar() {
+  await conectar();
+  await client.login(process.env.DISCORD_TOKEN);
+}
+
+iniciar().catch(err => {
+  console.error('❌ Erro crítico ao iniciar:', err);
+  process.exit(1);
+});
