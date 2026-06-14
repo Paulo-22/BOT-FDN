@@ -133,20 +133,14 @@ async function handleRegistro(interaction) {
       console.error(`[REGISTRO] Falha ao alterar nick de ${user.tag} (${user.id}):`, err.message);
     });
 
-    // ── Remover cargo "Sem Cargo" e atribuir os 3 cargos ───────────────────
+    // ── Remover cargo "Sem Cargo" e atribuir "Verificado" ──────────────────
     const cargoSemCargo = config.cargos.semCargo;
-    const cargosRegistro = [
-      '1265868398194327627', // Acesso geral (calls e canais)
-      '1265868400324903023', // Verificado
-      '1265868360613101658', // Observação (cargo mais baixo)
-    ];
+    const cargoVerificado = '1265868400324903023'; // Verificado
 
     if (cargoSemCargo && !cargoSemCargo.startsWith('ID_')) {
       await membro.roles.remove(cargoSemCargo).catch(() => {});
     }
-    for (const id of cargosRegistro) {
-      await membro.roles.add(id).catch(() => {});
-    }
+    await membro.roles.add(cargoVerificado).catch(() => {});
   }
 
   await logger.logRegistro(interaction.client, usuario, novoNick);
@@ -163,7 +157,7 @@ async function handleRegistro(interaction) {
         .setDescription(
           `Seu cadastro na **FDN** foi realizado com sucesso!\n\n` +
           descricaoNick +
-          `Você recebeu os cargos de **Verificado** e **Observação** automaticamente.`
+          `Você recebeu o cargo de **Verificado** automaticamente.`
         )
         .addFields(
           { name: '🎮 Nome na Cidade', value: nome_mta, inline: true },

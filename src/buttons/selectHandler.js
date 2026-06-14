@@ -66,6 +66,23 @@ async function handleUserSelecionado(interaction, acao, userId) {
   const membro = await interaction.guild.members.fetch(userId).catch(() => null);
   const nome   = membro ? membro.displayName : `<@${userId}>`;
 
+  // ── Verifica se o membro está registrado no sistema ──────────────────────
+  const registrado = await prisma.usuario.findUnique({ where: { discord_id: userId } });
+  if (!registrado) {
+    return interaction.update({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(config.cores.erro)
+          .setTitle('❌ Membro não registrado')
+          .setDescription(
+            `**${nome}** (<@${userId}>) ainda não realizou o registro na FDN.\n\n` +
+            `Apenas membros registrados podem ser gerenciados por este painel.`
+          ),
+      ],
+      components: [],
+    });
+  }
+
   // ── Promoção → selecionar o novo cargo ───────────────────────────────────
   if (acao === 'promover') {
     const cargoAtualIdx = _getCargoAtualIdx(membro);

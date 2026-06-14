@@ -209,33 +209,47 @@ function painelPunicao() {
 function painelAdmin() {
   const embed = new EmbedBuilder()
     .setColor(config.cores.principal)
+    .setAuthor({ name: 'FDN • Família do Norte' })
+    .setTitle('🛠️ PAINEL ADMINISTRATIVO')
     .setDescription(
-      '## PAINEL ADMINISTRATIVO | FDN\n\n' +
-      'Central de gerenciamento da **Família do Norte**. ' +
-      'Todas as ações são registradas em log e banco de dados.\n\n' +
-      '## GESTÃO DE MEMBROS\n\n' +
-      '**Promover** — eleva o cargo do membro na hierarquia.\n' +
-      '**Rebaixar** — reduz o cargo do membro na hierarquia.\n' +
-      '**Advertir** — registra uma advertência formal ao membro.\n' +
-      '**Exonerar** — remove o membro da facção definitivamente.\n\n' +
-      '## GESTÃO DE HORAS\n\n' +
-      '**Adicionar / Remover** — ajusta horas manualmente.\n' +
-      '**Consultar** — exibe a ficha completa do membro.'
+      'Central de gerenciamento da facção. ' +
+      'Todas as ações abaixo afetam **somente membros registrados** e são ' +
+      'automaticamente registradas no canal de logs e no banco de dados.'
     )
-    .setImage(BANNER_FDN);
+    .addFields(
+      {
+        name: '👥 Gestão de Membros',
+        value:
+          '⬆️ **Promover** — eleva o cargo na hierarquia\n' +
+          '⬇️ **Rebaixar** — reduz o cargo na hierarquia\n' +
+          '⚠️ **Advertir** — registra uma advertência formal\n' +
+          '🚫 **Exonerar** — remove o membro da facção',
+      },
+      {
+        name: '⏱️ Gestão de Horas',
+        value:
+          '➕ **Adicionar** — soma horas manualmente\n' +
+          '➖ **Remover** — subtrai horas manualmente\n' +
+          '📊 **Consultar** — exibe a ficha completa\n' +
+          '🗂️ **Histórico** — exibe o histórico de ações',
+      },
+    )
+    .setImage(BANNER_FDN)
+    .setFooter({ text: 'FDN • Painel Administrativo' })
+    .setTimestamp();
 
   const row1 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('btn_promover').setLabel('PROMOVER').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('btn_rebaixar').setLabel('REBAIXAR').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('btn_advertir').setLabel('ADVERTIR').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('btn_exonerar').setLabel('EXONERAR').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('btn_promover').setLabel('Promover').setEmoji('⬆️').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('btn_rebaixar').setLabel('Rebaixar').setEmoji('⬇️').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('btn_advertir').setLabel('Advertir').setEmoji('⚠️').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('btn_exonerar').setLabel('Exonerar').setEmoji('🚫').setStyle(ButtonStyle.Danger),
   );
 
   const row2 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('btn_add_horas').setLabel('Adicionar Horas').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('btn_rem_horas').setLabel('Remover Horas').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('btn_consultar_membro').setLabel('Consultar Membro').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('btn_historico').setLabel('Histórico').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('btn_add_horas').setLabel('Adicionar Horas').setEmoji('➕').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('btn_rem_horas').setLabel('Remover Horas').setEmoji('➖').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('btn_consultar_membro').setLabel('Consultar Membro').setEmoji('📊').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('btn_historico').setLabel('Histórico').setEmoji('🗂️').setStyle(ButtonStyle.Secondary),
   );
 
   return { embeds: [embed], components: [row1, row2] };
