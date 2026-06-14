@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField, ChannelType, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField, ChannelType, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');require('dotenv').config();
 
 // IDs de configuração
 const CATEGORY_ID = '1515681495367548952';
@@ -460,4 +460,4 @@ client.on('messageCreate', async (msg) => {
   });
 });
 
-client.login(TOKEN);
+client.login(process.env.DISCORD_TOKEN);
