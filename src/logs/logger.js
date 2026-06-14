@@ -32,7 +32,7 @@ async function logEdital(client, edital, acao, responsavel) {
     `<@${responsavel}>`,
   ];
 
-  const IMG_APROVADO = 'https://ibb.co/dwDf0cGb';
+  const IMG_APROVADO = 'https://i.ibb.co/dsq02sv4/Chat-GPT-Image-14-de-jun-de-2026-13-08-50.png';
   const IMG_REPROVADO = 'https://i.ibb.co/PZV7Dm1Z';
 
   const embed = new EmbedBuilder()
