@@ -45,18 +45,10 @@ async function logEdital(client, edital, acao, responsavel) {
   const canal = await client.channels.fetch(canalId).catch(() => null);
   if (!canal) return;
 
-  await canal.send({
-    embeds: [embed],
-    components: [
-      new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('_disabled')
-          .setLabel(aprovado ? 'Aprovado' : 'Reprovado')
-          .setStyle(aprovado ? ButtonStyle.Success : ButtonStyle.Danger)
-          .setDisabled(true),
-      ),
-    ],
-  });
+await canal.send({
+  embeds: [embed],
+  files: [{ attachment: aprovado ? IMG_APROVADO : IMG_REPROVADO, name: 'resultado.png' }],
+});
 }
 
 async function logRegistro(client, usuario, novoNick) {
