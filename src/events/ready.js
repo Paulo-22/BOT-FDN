@@ -15,7 +15,7 @@ module.exports = {
     });
 
     // Descomente APENAS na primeira execução para enviar os painéis
-     await configurarPaineis(client);
+     //await configurarPaineis(client);
   },
 };
 
