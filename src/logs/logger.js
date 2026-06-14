@@ -32,8 +32,8 @@ async function logEdital(client, edital, acao, responsavel) {
     `<@${responsavel}>`,
   ];
 
-  const IMG_APROVADO = 'https://i.ibb.co/vvL92fX1/aprovado.png';
-  const IMG_REPROVADO = 'https://i.ibb.co/1YZ0NCTD/reprovado.png';
+const IMG_APROVADO = 'https://i.ibb.co/1JGGMZxt/aprovado.png';
+  const IMG_REPROVADO = 'https://i.ibb.co/PZV7Dm1Z/reprovado.png';
 
   const embed = new EmbedBuilder()
     .setColor(cor)
@@ -45,10 +45,18 @@ async function logEdital(client, edital, acao, responsavel) {
   const canal = await client.channels.fetch(canalId).catch(() => null);
   if (!canal) return;
 
-await canal.send({
-  embeds: [embed],
-  files: [{ attachment: aprovado ? IMG_APROVADO : IMG_REPROVADO, name: 'resultado.png' }],
-});
+  await canal.send({
+    embeds: [embed],
+    components: [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('_disabled')
+          .setLabel(aprovado ? 'Aprovado' : 'Reprovado')
+          .setStyle(aprovado ? ButtonStyle.Success : ButtonStyle.Danger)
+          .setDisabled(true),
+      ),
+    ],
+  });
 }
 
 async function logRegistro(client, usuario, novoNick) {
