@@ -62,16 +62,18 @@ async function logEdital(client, edital, acao, responsavel) {
 async function logRegistro(client, usuario, novoNick) {
   novoNick = novoNick || `𝑭𝑫𝑵 » ${usuario.nome_mta} ${usuario.id_gamer}`;
 
-  const embed = new EmbedBuilder()
-    .setColor(config.cores.sucesso)
-    .setTitle('NOVO REGISTRO | FDN')
-    .setDescription(
-      `👤 **MEMBRO:** <@${usuario.discord_id}> [${novoNick}]\n` +
-      `👤 **LOGIN:** ${usuario.login}\n` +
-      `🆔 **ID:** ${usuario.id_gamer}`
-    )
-    .setTimestamp()
-    .setFooter({ text: 'FDN — Sistema de Registro' });
+  const emojiMembro = '<:fdn_login:1516080898670596277>';
+  const emojiLogin  = '<:fdn_login:1516080898670596277>';
+  const emojiID     = '<:fdn_id:1516077731732000828>';
+
+const embed = new EmbedBuilder()
+  .setColor(config.cores.principal) // era sucesso, agora principal (vermelho)
+  .setTitle('NOVO REGISTRO | FDN')
+  .setDescription(
+    `${emojiMembro} **MEMBRO:** <@${usuario.discord_id}> [${novoNick}]\n` +
+    `${emojiLogin} **LOGIN:** ${usuario.login}\n` +
+    `${emojiID} **ID:** ${usuario.id_gamer}`
+  );
 
   await enviarLog(client, 'registro', embed);
 }
@@ -96,15 +98,17 @@ async function logRecrutamento(client, candidatura, acao, responsavel) {
 }
 
 async function logPromocao(client, dados) {
+  const emoji = '<:iconeverd1:1515370893998555257>';
+
   const embed = new EmbedBuilder()
-    .setColor(config.cores.gold)
-    .setTitle('⬆️ Promoção Registrada')
-    .addFields(
-      { name: 'Membro', value: `<@${dados.usuario}>`, inline: true },
-      { name: 'Cargo Anterior', value: dados.cargo_antigo, inline: true },
-      { name: 'Novo Cargo', value: dados.cargo_novo, inline: true },
-      { name: 'Motivo', value: dados.motivo },
-      { name: 'Responsável', value: `<@${dados.responsavel}>`, inline: true },
+    .setColor(config.cores.sucesso)
+    .setDescription(
+      `${emoji} **Promovido:** <@${dados.usuario}>\n` +
+      `${emoji} **Cargo novo:** ${dados.cargo_novo}\n` +
+      `${emoji} **Cargo antigo:** ${dados.cargo_antigo}\n` +
+      `${emoji} **Motivo:** ${dados.motivo}\n` +
+      `─────────────────────\n` +
+      `${emoji} **Responsável:** <@${dados.responsavel}>`
     )
     .setTimestamp()
     .setFooter({ text: 'FDN — Sistema de Promoções' });
@@ -113,15 +117,17 @@ async function logPromocao(client, dados) {
 }
 
 async function logRebaixamento(client, dados) {
+  const emoji = '<:iconvermlho1:1516115071816831086>';
+
   const embed = new EmbedBuilder()
-    .setColor(config.cores.aviso)
-    .setTitle('⬇️ Rebaixamento Registrado')
-    .addFields(
-      { name: 'Membro', value: `<@${dados.usuario}>`, inline: true },
-      { name: 'Cargo Anterior', value: dados.cargo_antigo, inline: true },
-      { name: 'Novo Cargo', value: dados.cargo_novo, inline: true },
-      { name: 'Motivo', value: dados.motivo },
-      { name: 'Responsável', value: `<@${dados.responsavel}>`, inline: true },
+    .setColor(config.cores.erro)
+    .setDescription(
+      `${emoji} **Rebaixado:** <@${dados.usuario}>\n` +
+      `${emoji} **Cargo novo:** ${dados.cargo_novo}\n` +
+      `${emoji} **Cargo antigo:** ${dados.cargo_antigo}\n` +
+      `${emoji} **Motivo:** ${dados.motivo}\n` +
+      `─────────────────────\n` +
+      `${emoji} **Responsável:** <@${dados.responsavel}>`
     )
     .setTimestamp()
     .setFooter({ text: 'FDN — Sistema de Rebaixamentos' });
@@ -130,13 +136,15 @@ async function logRebaixamento(client, dados) {
 }
 
 async function logAdvertencia(client, dados) {
+  const emoji = '<:advicone:1516116185320783952>';
+
   const embed = new EmbedBuilder()
-    .setColor(config.cores.erro)
-    .setTitle('⚠️ Advertência Aplicada')
-    .addFields(
-      { name: 'Membro', value: `<@${dados.usuario}>`, inline: true },
-      { name: 'Motivo', value: dados.motivo },
-      { name: 'Responsável', value: `<@${dados.responsavel}>`, inline: true },
+    .setColor(config.cores.aviso)
+    .setDescription(
+      `${emoji} **Advertido:** <@${dados.usuario}>\n` +
+      `${emoji} **Motivo:** ${dados.motivo}\n` +
+      `─────────────────────\n` +
+      `${emoji} **Responsável:** <@${dados.responsavel}>`
     )
     .setTimestamp()
     .setFooter({ text: 'FDN — Sistema de Advertências' });
@@ -145,13 +153,15 @@ async function logAdvertencia(client, dados) {
 }
 
 async function logExoneracao(client, dados) {
+  const emoji = '<:exoicone:1516117523869995249>';
+
   const embed = new EmbedBuilder()
     .setColor(config.cores.erro)
-    .setTitle('🚫 Exoneração Registrada')
-    .addFields(
-      { name: 'Membro', value: `<@${dados.usuario}>`, inline: true },
-      { name: 'Motivo', value: dados.motivo },
-      { name: 'Responsável', value: `<@${dados.responsavel}>`, inline: true },
+    .setDescription(
+      `${emoji} **Exonerado:** <@${dados.usuario}>\n` +
+      `${emoji} **Motivo:** ${dados.motivo}\n` +
+      `─────────────────────\n` +
+      `${emoji} **Responsável:** <@${dados.responsavel}>`
     )
     .setTimestamp()
     .setFooter({ text: 'FDN — Sistema de Exonerações' });

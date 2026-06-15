@@ -11,19 +11,32 @@ const config = require('../config');
 
 const BANNER_FDN = 'https://i.ibb.co/JjH1WktY/FDN.png';
 
+// Imagens individuais por painel — troque cada link quando tiver a imagem específica.
+// Por padrão, todas apontam para BANNER_FDN.
+const BANNER_REGISTRO       = 'https://i.ibb.co/tMNynsgp/registre-se-fdn.png';
+const BANNER_RECRUTAMENTO   = BANNER_FDN;
+const BANNER_EDITAL         = BANNER_FDN;
+const BANNER_TRANSFERENCIA  = BANNER_FDN;
+const BANNER_BATEPONTO      = BANNER_FDN;
+const BANNER_AUSENCIAS      = BANNER_FDN;
+const BANNER_TICKETS        = BANNER_FDN;
+const BANNER_PUNICAO        = BANNER_FDN;
+const BANNER_ADMIN          = BANNER_FDN;
+
 // ─────────────────────────────────────────────
 // REGISTRO
 // ─────────────────────────────────────────────
 function painelRegistro() {
   const embed = new EmbedBuilder()
     .setColor(config.cores.principal)
+    .setImage(BANNER_REGISTRO)
     .setDescription(
-      '## REGISTRO | FDN\n\n' +
+      '**REGISTRO | FDN**\n' +
+      '──────────────────────────\n\n' +
       'Para liberar o acesso ao nosso servidor e mudar seu nome e ID, é necessário que ' +
       'você realize o registro no nosso banco de dados.\n\n' +
       'Clique no botão **REGISTRE-SE** abaixo e preencha os campos solicitados.'
-    )
-    .setImage(BANNER_FDN);
+    );
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -46,7 +59,7 @@ function painelRecrutamento() {
       'Esse formulário contém uma lista de perguntas para conhecer seu conhecimento e suas informações.\n' +
       'Para começar basta clicar no botão **INICIAR FORMULÁRIO**.'
     )
-    .setImage(BANNER_FDN);
+    .setImage(BANNER_RECRUTAMENTO);
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -69,7 +82,7 @@ function painelEdital() {
       'Este formulário será enviado a **FDN**.\n' +
       'Não compartilhe sua senha ou outras informações confidenciais.'
     )
-    .setImage(BANNER_FDN);
+    .setImage(BANNER_EDITAL);
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -95,7 +108,7 @@ function painelTransferencia() {
       'Após abrir a solicitação, envie uma foto dos seus cargos no grupo atual.\n' +
       'A imagem deve mostrar a tela toda, data e hora, e ser tirada pelo computador.'
     )
-    .setImage(BANNER_FDN);
+    .setImage(BANNER_TRANSFERENCIA);
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -122,7 +135,7 @@ function painelBatePonto() {
       'Caso o membro saia do canal de voz sem utilizar o comando o ponto é finalizado automaticamente.\n\n' +
       'Para verificar o total de horas registradas, basta clicar no botão **\'HORAS\'**.'
     )
-    .setImage(BANNER_FDN);
+    .setImage(BANNER_BATEPONTO);
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -156,7 +169,7 @@ function painelAusencias() {
       'Justificativa obrigatória.\n' +
       'Atividade durante o afastamento pode resultar em punição.'
     )
-    .setImage(BANNER_FDN);
+    .setImage(BANNER_AUSENCIAS);
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -183,7 +196,7 @@ function painelTickets() {
       '❓ | Dúvida\n' +
       '⚖️ | Recurso'
     )
-    .setImage(BANNER_FDN);
+    .setImage(BANNER_TICKETS);
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('btn_ticket_suporte').setLabel('Suporte em Geral').setStyle(ButtonStyle.Secondary),
@@ -211,7 +224,7 @@ function painelPunicao() {
       '**Punição 3:** aplica o terceiro cargo de punição.\n' +
       '**Remoção:** remove os cargos do membro e aplica o cargo de removido.'
     )
-    .setImage(BANNER_FDN);
+    .setImage(BANNER_PUNICAO);
 
   const menu = new StringSelectMenuBuilder()
     .setCustomId('menu_punicao')
@@ -235,44 +248,70 @@ function painelAdmin() {
     .setAuthor({ name: 'FDN • Família do Norte' })
     .setTitle('🛠️ PAINEL ADMINISTRATIVO')
     .setDescription(
-      'Central de gerenciamento da facção. ' +
-      'Todas as ações abaixo afetam **somente membros registrados** e são ' +
-      'automaticamente registradas no canal de logs e no banco de dados.'
+      '══════════════════════════\n' +
+      'Central de gerenciamento da facção.\n' +
+      'Todas as ações afetam **somente membros registrados** e são\n' +
+      'automaticamente registradas nos logs e no banco de dados.\n' +
+      '══════════════════════════\n\n' +
+      '**👥 GESTÃO DE MEMBROS**\n' +
+      '<:hitoricofdn:1516088810457530490> **Promover** — eleva o cargo na hierarquia\n' +
+      '<:rabaixarfdn:1516089291854315720> **Rebaixar** — reduz o cargo na hierarquia\n' +
+      '<:advfdn:1516090237695168522> **Advertir** — registra uma advertência formal\n' +
+      '<:exofdn:1516094539243327598> **Exonerar** — remove o membro da facção\n\n' +
+      '**⏱️ GESTÃO DE HORAS**\n' +
+      '<:horamaisfdn:1516097229763645631> **Adicionar** — soma horas manualmente\n' +
+      '<:menoshorasfdn:1516104581463933170> **Remover** — subtrai horas manualmente\n' +
+      '<:consultarfdn:1516109851607175249> **Consultar** — exibe a ficha completa\n' +
+      '<:hitoricofdn:1516109786741997698> **Histórico** — exibe o histórico de ações\n'
     )
-    .addFields(
-      {
-        name: '👥 Gestão de Membros',
-        value:
-          '⬆️ **Promover** — eleva o cargo na hierarquia\n' +
-          '⬇️ **Rebaixar** — reduz o cargo na hierarquia\n' +
-          '⚠️ **Advertir** — registra uma advertência formal\n' +
-          '🚫 **Exonerar** — remove o membro da facção',
-      },
-      {
-        name: '⏱️ Gestão de Horas',
-        value:
-          '➕ **Adicionar** — soma horas manualmente\n' +
-          '➖ **Remover** — subtrai horas manualmente\n' +
-          '📊 **Consultar** — exibe a ficha completa\n' +
-          '🗂️ **Histórico** — exibe o histórico de ações',
-      },
-    )
-    .setImage(BANNER_FDN)
+    .setImage(BANNER_ADMIN)
     .setFooter({ text: 'FDN • Painel Administrativo' })
     .setTimestamp();
 
   const row1 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('btn_promover').setLabel('Promover').setEmoji('⬆️').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('btn_rebaixar').setLabel('Rebaixar').setEmoji('⬇️').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('btn_advertir').setLabel('Advertir').setEmoji('⚠️').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('btn_exonerar').setLabel('Exonerar').setEmoji('🚫').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId('btn_promover')
+      .setLabel('Promover')
+      .setEmoji({ id: '1516088810457530490', name: 'hitoricofdn' })
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('btn_rebaixar')
+      .setLabel('Rebaixar')
+      .setEmoji({ id: '1516089291854315720', name: 'rabaixarfdn' })
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('btn_advertir')
+      .setLabel('Advertir')
+      .setEmoji({ id: '1516090237695168522', name: 'advfdn' })
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('btn_exonerar')
+      .setLabel('Exonerar')
+      .setEmoji({ id: '1516094539243327598', name: 'exofdn' })
+      .setStyle(ButtonStyle.Secondary),
   );
 
   const row2 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('btn_add_horas').setLabel('Adicionar Horas').setEmoji('➕').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('btn_rem_horas').setLabel('Remover Horas').setEmoji('➖').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('btn_consultar_membro').setLabel('Consultar Membro').setEmoji('📊').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('btn_historico').setLabel('Histórico').setEmoji('🗂️').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('btn_add_horas')
+      .setLabel('Adicionar Horas')
+      .setEmoji({ id: '1516097229763645631', name: 'horamaisfdn' })
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('btn_rem_horas')
+      .setLabel('Remover Horas')
+      .setEmoji({ id: '1516104581463933170', name: 'menoshorasfdn' })
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('btn_consultar_membro')
+      .setLabel('Consultar Membro')
+      .setEmoji({ id: '1516109851607175249', name: 'consultarfdn' })
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('btn_historico')
+      .setLabel('Histórico')
+      .setEmoji({ id: '1516109786741997698', name: 'hitoricofdn' })
+      .setStyle(ButtonStyle.Secondary),
   );
 
   return { embeds: [embed], components: [row1, row2] };
