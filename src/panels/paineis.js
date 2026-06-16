@@ -13,15 +13,15 @@ const BANNER_FDN = 'https://i.ibb.co/JjH1WktY/FDN.png';
 
 // Imagens individuais por painel — troque cada link quando tiver a imagem específica.
 // Por padrão, todas apontam para BANNER_FDN.
-const BANNER_REGISTRO       = 'https://i.ibb.co/tMNynsgp/registre-se-fdn.png';
+const BANNER_REGISTRO       = 'https://i.ibb.co/WWQrgjQn/FDN-registre-se.png';
 const BANNER_RECRUTAMENTO   = BANNER_FDN;
-const BANNER_EDITAL         = BANNER_FDN;
+const BANNER_EDITAL         = 'https://i.ibb.co/hJjddXF8/FDN-edital.png';
 const BANNER_TRANSFERENCIA  = BANNER_FDN;
-const BANNER_BATEPONTO      = BANNER_FDN;
-const BANNER_AUSENCIAS      = BANNER_FDN;
-const BANNER_TICKETS        = BANNER_FDN;
-const BANNER_PUNICAO        = BANNER_FDN;
-const BANNER_ADMIN          = BANNER_FDN;
+const BANNER_BATEPONTO      = 'https://i.ibb.co/gb1vP6gZ/FDN-BATE-PONTO.png';
+const BANNER_AUSENCIAS      = 'https://i.ibb.co/JFHnPS5s/FDN-painel-Ausencia.png';
+const BANNER_TICKETS        = 'https://i.ibb.co/PzFSWc3k/FDN-atendimento.png';
+const BANNER_PUNICAO        = 'https://i.ibb.co/6cSwBn3w/FDN-painel-puni.png';
+const BANNER_ADMIN          = 'https://i.ibb.co/S4p5wY2z/FDN-painel-ADM.png';
 
 // ─────────────────────────────────────────────
 // REGISTRO

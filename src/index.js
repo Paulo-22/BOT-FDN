@@ -1,4 +1,4 @@
-// src/index.js
+
 // Ponto de entrada do bot FDN
 
 require('dotenv').config();
