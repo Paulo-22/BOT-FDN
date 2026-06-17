@@ -93,7 +93,7 @@ async function logEdital(client, edital, acao, responsavel) {
       `**📅  Data:** <t:${ts}:F>\n\n` +
       `${SEPARADOR}`
     )
-    .setImage(aprovado ? config.banners.aprovado : config.banners.reprovado)
+    .setImage(aprovado ? config.banners?.aprovado || null : config.banners?.reprovado || null)
     .setFooter({ text: 'FDN — Formulário de Recrutamento' })
     .setTimestamp();
 

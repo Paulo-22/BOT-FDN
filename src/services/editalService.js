@@ -1,5 +1,15 @@
 // src/services/editalService.js
 
+module.exports = {
+  // ...resto do seu config
+  banners: {
+    aprovado: 'https://i.ibb.co/N2Jj15gJ/Chat-GPT-Image-14-de-jun-de-2026-13-18-18.png',
+    reprovado: 'https://i.ibb.co/dwkBT7vS/Chat-GPT-Image-14-de-jun-de-2026-13-23-58.png',
+  },
+  // ...
+};
+
+
 const {
     EmbedBuilder,
     ActionRowBuilder,
