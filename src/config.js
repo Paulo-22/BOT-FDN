@@ -1,4 +1,4 @@
-// src/config.js
+
 // Configuração central do bot FDN
 
 module.exports = {
@@ -7,9 +7,9 @@ module.exports = {
   // ============================================
   cargos: {
     admin:       '1515212078137479268',
-    lider:       '1265868309467762729',
-    subLider:    '1265868312504696833',
-    coordenador: '1265868313662197851',
+    Dono:       '1265868309467762729',
+    SubFundador:    '1265868312504696833',
+    Fundador: '1265868313662197851',
 
     // Hierarquia completa (índice 0 = mais baixo)
     hierarquia: [
@@ -53,6 +53,15 @@ module.exports = {
 
     exonerado: '1265868381962108961',
     semCargo:  '1265868402178920559',
+
+    // Cargos aplicados pelo sistema de punição.
+    // REMOCAO não está aqui: ela reaproveita o cargo `exonerado` acima.
+    // Substitua os valores 'ID_PUNICAO_X' pelos IDs reais dos cargos no servidor.
+    punicao: {
+      PUNICAO_1: 'ID_PUNICAO_1',
+      PUNICAO_2: 'ID_PUNICAO_2',
+      PUNICAO_3: 'ID_PUNICAO_3',
+    },
 
     // Permissões por ação    //FUNDADOR,             SUB FUNDADOR,                COORDENADOR
     podePRomover:            ['1265868309467762729', '1265868312504696833', '1265868313662197851'],

@@ -1,9 +1,8 @@
-
-
 const {
   EmbedBuilder,
   ActionRowBuilder,
   RoleSelectMenuBuilder,
+  UserSelectMenuBuilder,
   ButtonBuilder,
   ButtonStyle,
 } = require('discord.js');
@@ -17,13 +16,48 @@ const logger       = require('../logs/logger');
 
 const SEPARADOR = '▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬';
 
+const LABELS_PUNICAO = {
+  PUNICAO_1: '⚠️ Punição Nível 1',
+  PUNICAO_2: '🔶 Punição Nível 2',
+  PUNICAO_3: '🔴 Punição Nível 3',
+  REMOCAO:   '🚫 Remoção',
+};
+
 async function handleSelect(interaction) {
   const { customId, values } = interaction;
   try {
     if (customId === 'menu_punicao') {
       if (!perm.podeAdvertir(interaction.member))
         return interaction.reply({ content: '❌ Sem permissão.', ephemeral: true });
-      return interaction.showModal(modals.modalPunicao(values[0]));
+
+      const tipo  = values[0];
+      const label = LABELS_PUNICAO[tipo] ?? 'Punição';
+
+      return interaction.update({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(config.cores.aviso)
+            .setAuthor({ name: `⚖️  ${label.toUpperCase()}  ·  FDN` })
+            .setDescription(
+              `${SEPARADOR}\n\n` +
+              `Selecione o **membro** que receberá esta punição:\n\n` +
+              `${SEPARADOR}`
+            ),
+        ],
+        components: [
+          new ActionRowBuilder().addComponents(
+            new UserSelectMenuBuilder()
+              .setCustomId(`userselect_punicao_${tipo}`)
+              .setPlaceholder('Selecione o membro...')
+              .setMinValues(1).setMaxValues(1),
+          ),
+        ],
+      });
+    }
+
+    if (customId.startsWith('userselect_punicao_')) {
+      const tipo = customId.replace('userselect_punicao_', '');
+      return handlePunicaoUsuarioSelecionado(interaction, tipo, values[0]);
     }
 
     if (customId.startsWith('userselect_'))
@@ -38,6 +72,32 @@ async function handleSelect(interaction) {
     const msg = { content: '❌ Erro ao processar seleção.', ephemeral: true };
     interaction.replied ? interaction.followUp(msg) : interaction.reply(msg);
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MEMBRO SELECIONADO PARA PUNIÇÃO
+// ─────────────────────────────────────────────────────────────────────────────
+async function handlePunicaoUsuarioSelecionado(interaction, tipo, userId) {
+  const registrado = await prisma.usuario.findUnique({ where: { discord_id: userId } });
+
+  if (!registrado) {
+    return interaction.update({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(config.cores.erro)
+          .setAuthor({ name: '❌  MEMBRO NÃO REGISTRADO  ·  FDN' })
+          .setDescription(
+            `${SEPARADOR}\n\n` +
+            `> <@${userId}> não realizou o registro na FDN.\n\n` +
+            `Apenas membros registrados podem ser punidos por este painel.\n\n` +
+            `${SEPARADOR}`
+          ),
+      ],
+      components: [],
+    });
+  }
+
+  return interaction.showModal(modals.modalMotivoPunicao(tipo, userId));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

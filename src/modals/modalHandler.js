@@ -1,5 +1,3 @@
-
-
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const config        = require('../config');
 const { prisma }    = require('../database/client');
@@ -26,8 +24,13 @@ async function handleModal(interaction) {
     if (customId === 'modal_add_horas')        return handleGerenciarHoras(interaction, 'ADD', null);
     if (customId === 'modal_rem_horas')        return handleGerenciarHoras(interaction, 'REM', null);
 
-    if (customId.startsWith('modal_punicao_'))
-      return handlePunicao(interaction, customId.replace('modal_punicao_', ''));
+    if (customId.startsWith('modal_motivo_punicao_')) {
+      const resto = customId.replace('modal_motivo_punicao_', '');
+      const ultimoUnderscore = resto.lastIndexOf('_');
+      const tipo   = resto.slice(0, ultimoUnderscore);
+      const userId = resto.slice(ultimoUnderscore + 1);
+      return handlePunicao(interaction, tipo, userId);
+    }
 
     if (customId.startsWith('modal_horas_add_'))
       return handleGerenciarHoras(interaction, 'ADD', customId.replace('modal_horas_add_', ''));
@@ -360,10 +363,16 @@ async function handleAusencia(interaction) {
 // ─────────────────────────────────────────────────────────────────────────────
 // PUNIÇÃO
 // ─────────────────────────────────────────────────────────────────────────────
-async function handlePunicao(interaction, tipo) {
+const LABELS_PUNICAO = {
+  PUNICAO_1: '⚠️ Punição Nível 1',
+  PUNICAO_2: '🔶 Punição Nível 2',
+  PUNICAO_3: '🔴 Punição Nível 3',
+  REMOCAO:   '🚫 Remoção',
+};
+
+async function handlePunicao(interaction, tipo, usuario_id) {
   const { user, guild } = interaction;
-  const usuario_id = interaction.fields.getTextInputValue('usuario_id').trim();
-  const motivo     = interaction.fields.getTextInputValue('motivo').trim();
+  const motivo = interaction.fields.getTextInputValue('motivo').trim();
 
   const alvo = await prisma.usuario.findUnique({ where: { discord_id: usuario_id } });
   if (!alvo) {
@@ -373,14 +382,38 @@ async function handlePunicao(interaction, tipo) {
     });
   }
 
+  const membro = await guild.members.fetch(usuario_id).catch(() => null);
+
+  if (membro) {
+    if (tipo === 'REMOCAO') {
+      // Remove todos os cargos da hierarquia e aplica o cargo de exonerado
+      for (const cargo of config.cargos.hierarquia) {
+        if (cargo.id && !cargo.id.startsWith('ID_'))
+          await membro.roles.remove(cargo.id).catch(() => {});
+      }
+      // Remove também eventuais cargos de punição anteriores
+      for (const cargoPunicaoId of Object.values(config.cargos.punicao)) {
+        if (cargoPunicaoId && !cargoPunicaoId.startsWith('ID_'))
+          await membro.roles.remove(cargoPunicaoId).catch(() => {});
+      }
+      if (config.cargos.exonerado && !config.cargos.exonerado.startsWith('ID_'))
+        await membro.roles.add(config.cargos.exonerado).catch(() => {});
+
+      await prisma.usuario.update({ where: { discord_id: usuario_id }, data: { cargo: 'Exonerado' } });
+    } else {
+      const cargoPunicaoId = config.cargos.punicao[tipo];
+      if (cargoPunicaoId && !cargoPunicaoId.startsWith('ID_'))
+        await membro.roles.add(cargoPunicaoId).catch(() => {});
+    }
+  }
+
   await prisma.punicao.create({ data: { usuario: usuario_id, responsavel: user.id, tipo, motivo } });
 
-  const labels = { PUNICAO_1: '⚠️ Punição 1', PUNICAO_2: '🔶 Punição 2', PUNICAO_3: '🔴 Punição 3', REMOCAO: '🚫 Remoção' };
+  const label = LABELS_PUNICAO[tipo] ?? tipo;
 
-  const membro = await guild.members.fetch(usuario_id).catch(() => null);
   membro?.send({
     embeds: [new EmbedBuilder().setColor(config.cores.erro)
-      .setTitle(`${labels[tipo]} Aplicada`)
+      .setTitle(`${label} Aplicada`)
       .setDescription(`**Motivo:** ${motivo}\n**Responsável:** <@${user.id}>`)
       .setTimestamp()],
   }).catch(() => {});
@@ -391,7 +424,7 @@ async function handlePunicao(interaction, tipo) {
     embeds: [
       new EmbedBuilder()
         .setColor(config.cores.sucesso)
-        .setDescription(`✅ **${labels[tipo]}** aplicada a <@${usuario_id}>.\n\n**Motivo:** ${motivo}`)
+        .setDescription(`✅ **${label}** aplicada a <@${usuario_id}>.\n\n**Motivo:** ${motivo}`)
         .setTimestamp(),
     ],
     ephemeral: true,

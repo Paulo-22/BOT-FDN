@@ -1,4 +1,4 @@
-// src/logs/logger.js
+
 // Sistema centralizado de logs — FDN (redesenhado)
 
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -315,11 +315,23 @@ async function logPunicao(client, dados) {
     PUNICAO_3: '🔴  Punição Nível 3',
     REMOCAO:   '🚫  Remoção',
   };
+  const cores = {
+    PUNICAO_1: config.cores.aviso,
+    PUNICAO_2: config.cores.aviso,
+    PUNICAO_3: config.cores.erro,
+    REMOCAO:   config.cores.erro,
+  };
+  const icones = {
+    PUNICAO_1: '⚠️',
+    PUNICAO_2: '🔶',
+    PUNICAO_3: '🔴',
+    REMOCAO:   '🚫',
+  };
   const ts = Math.floor(Date.now() / 1000);
 
   const embed = new EmbedBuilder()
-    .setColor(config.cores.erro)
-    .setAuthor({ name: `⚖️  PUNIÇÃO APLICADA  ·  FDN` })
+    .setColor(cores[dados.tipo] ?? config.cores.erro)
+    .setAuthor({ name: `${icones[dados.tipo] ?? '⚖️'}  ${labels[dados.tipo] ?? dados.tipo} APLICADA  ·  FDN` })
     .setDescription(
       `${SEPARADOR}\n\n` +
       `**👤  Membro punido:** <@${dados.usuario}>\n` +

@@ -1,4 +1,4 @@
-// src/modals/modals.js
+
 // Todos os modais do bot FDN
 
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
@@ -72,9 +72,9 @@ function modalAusencia() {
     );
 }
 
-// ── Punição ──────────────────────────────────
+// ── Punição (via UserSelectMenu — só pede o motivo) ──
 
-function modalPunicao(tipo) {
+function modalMotivoPunicao(tipo, userId) {
   const labels = {
     PUNICAO_1: '⚠️ Punição Nível 1',
     PUNICAO_2: '🔶 Punição Nível 2',
@@ -82,11 +82,13 @@ function modalPunicao(tipo) {
     REMOCAO:   '🚫 Remoção',
   };
   return new ModalBuilder()
-    .setCustomId(`modal_punicao_${tipo}`)
+    .setCustomId(`modal_motivo_punicao_${tipo}_${userId}`)
     .setTitle(labels[tipo] || 'Punição')
     .addComponents(
-      row(input('usuario_id', 'ID do Discord do membro', TextInputStyle.Short, true, 20).setPlaceholder('Cole o ID do usuário')),
-      row(input('motivo', 'Motivo da punição', TextInputStyle.Paragraph, true, 500)),
+      row(
+        input('motivo', 'Motivo da punição', TextInputStyle.Paragraph, true, 500)
+          .setPlaceholder('Descreva o motivo da punição...'),
+      ),
     );
 }
 
@@ -211,7 +213,7 @@ module.exports = {
   modalEditalNome,
   modalTransferencia,
   modalAusencia,
-  modalPunicao,
+  modalMotivoPunicao,
   modalAdvertencia,
   modalMotivoSimples,
   modalMotivo,
