@@ -58,9 +58,9 @@ module.exports = {
     // REMOCAO não está aqui: ela reaproveita o cargo `exonerado` acima.
     // Substitua os valores 'ID_PUNICAO_X' pelos IDs reais dos cargos no servidor.
     punicao: {
-      PUNICAO_1: 'ID_PUNICAO_1',
-      PUNICAO_2: 'ID_PUNICAO_2',
-      PUNICAO_3: 'ID_PUNICAO_3',
+      PUNICAO_1: '1265868377113755678',
+      PUNICAO_2: '1265868378057211944',
+      PUNICAO_3: '1265868378833424446',
     },
 
     // Permissões por ação    //FUNDADOR,             SUB FUNDADOR,                COORDENADOR
