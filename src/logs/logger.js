@@ -1,44 +1,101 @@
 // src/logs/logger.js
-// Sistema centralizado de logs para canais do Discord
+// Sistema centralizado de logs — FDN (redesenhado)
 
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const config = require('../config');
 
-async function enviarLog(client, tipo, embed) {
+const SEPARADOR = '▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER — envia embed para o canal de log correto
+// ─────────────────────────────────────────────────────────────────────────────
+async function enviarLog(client, tipo, payload) {
   try {
     const canalId = config.canais.logs[tipo];
     if (!canalId || canalId.startsWith('ID_')) return;
     const canal = await client.channels.fetch(canalId).catch(() => null);
     if (!canal) return;
-    await canal.send({ embeds: [embed] });
+    await canal.send(typeof payload === 'object' && payload.embeds ? payload : { embeds: [payload] });
   } catch (err) {
-    console.error(`[LOG ERROR] Falha ao enviar log (${tipo}):`, err.message);
+    console.error(`[LOG ERROR] (${tipo}):`, err.message);
   }
 }
 
-async function logEdital(client, edital, acao, responsavel) {
-  const aprovado = acao === 'APROVADA';
-  const cor = aprovado ? config.cores.sucesso : config.cores.erro;
-
-  const linhas = [
-    `• **FORMULÁRIO ${aprovado ? 'APROVADO' : 'REPROVADO'} | FDN**`,
-    '',
-    `Parabéns <@${edital.discord_id}> [${edital.discord_nome}] !`,
-    aprovado
-      ? 'Seu edital foi **analisado** e **aprovado** com sucesso.\nConfira as instruções enviadas no seu **privado** para dar continuidade e avançar para o próximo passo.'
-      : 'Seu edital foi **analisado** e **reprovado**.\nVocê poderá tentar novamente após o período de espera definido pela staff.',
-    '',
-    `• **ANALISADO POR:**`,
-    `<@${responsavel}>`,
-  ];
-
-  const IMG_APROVADO = 'https://i.ibb.co/N2Jj15gJ/Chat-GPT-Image-14-de-jun-de-2026-13-18-18.png';
-  const IMG_REPROVADO = 'https://i.ibb.co/dwkBT7vS/Chat-GPT-Image-14-de-jun-de-2026-13-23-58.png';
+// ─────────────────────────────────────────────────────────────────────────────
+// REGISTRO
+// ─────────────────────────────────────────────────────────────────────────────
+async function logRegistro(client, usuario, novoNick) {
+  const nick = novoNick || `𝑭𝑫𝑵 » ${usuario.nome_mta} ${usuario.id_gamer}`;
+  const ts   = Math.floor(Date.now() / 1000);
 
   const embed = new EmbedBuilder()
-    .setColor(cor)
-    .setDescription(linhas.join('\n'))
-    .setImage(aprovado ? IMG_APROVADO : IMG_REPROVADO);
+    .setColor(config.cores.sucesso)
+    .setAuthor({ name: '📋  NOVO REGISTRO  ·  FDN' })
+    .setDescription(
+      `${SEPARADOR}\n\n` +
+      `> <@${usuario.discord_id}> acabou de se registrar na **FDN**.\n\n` +
+      `**👤  Membro:** <@${usuario.discord_id}>\n` +
+      `**🏷️  Nick atribuído:** \`${nick}\`\n` +
+      `**🎮  Nome MTA:** \`${usuario.nome_mta}\`\n` +
+      `**🔑  Login:** \`${usuario.login}\`\n` +
+      `**🆔  ID na cidade:** \`${usuario.id_gamer}\`\n` +
+      `**📅  Data:** <t:${ts}:F>\n\n` +
+      `${SEPARADOR}`
+    )
+    .setFooter({ text: 'FDN — Sistema de Registro' })
+    .setTimestamp();
+
+  await enviarLog(client, 'registro', embed);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RECRUTAMENTO
+// ─────────────────────────────────────────────────────────────────────────────
+async function logRecrutamento(client, candidatura, acao, responsavel) {
+  const aprovado = acao === 'APROVADA';
+  const ts = Math.floor(Date.now() / 1000);
+
+  const embed = new EmbedBuilder()
+    .setColor(aprovado ? config.cores.sucesso : config.cores.erro)
+    .setAuthor({ name: `${aprovado ? '✅' : '❌'}  CANDIDATURA ${acao}  ·  FDN` })
+    .setDescription(
+      `${SEPARADOR}\n\n` +
+      `**👤  Candidato:** <@${candidatura.discord_id}>\n` +
+      `**🎮  Nome MTA:** \`${candidatura.nome}\`\n` +
+      `**🆔  ID Gamer:** \`${candidatura.id_gamer}\`\n` +
+      `**📋  Status:** \`${acao}\`\n` +
+      `**🛡️  Responsável:** <@${responsavel}>\n` +
+      `**📅  Data:** <t:${ts}:F>\n\n` +
+      `${SEPARADOR}`
+    )
+    .setFooter({ text: 'FDN — Sistema de Recrutamento' })
+    .setTimestamp();
+
+  await enviarLog(client, 'recrutamento', embed);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EDITAL
+// ─────────────────────────────────────────────────────────────────────────────
+async function logEdital(client, edital, acao, responsavel) {
+  const aprovado = acao === 'APROVADA';
+  const ts = Math.floor(Date.now() / 1000);
+
+  const embed = new EmbedBuilder()
+    .setColor(aprovado ? config.cores.sucesso : config.cores.erro)
+    .setDescription(
+      `${SEPARADOR}\n\n` +
+      `> <@${edital.discord_id}>, seu formulário foi **analisado** e **${aprovado ? 'aprovado' : 'reprovado'}**.\n\n` +
+      (aprovado
+        ? '✅ Parabéns! Confira as instruções enviadas no seu **privado** para dar continuidade ao processo.'
+        : '❌ Você poderá tentar novamente após o período de espera definido pela staff.') +
+      `\n\n**🛡️  Analisado por:** <@${responsavel}>\n` +
+      `**📅  Data:** <t:${ts}:F>\n\n` +
+      `${SEPARADOR}`
+    )
+    .setImage(aprovado ? config.banners.aprovado : config.banners.reprovado)
+    .setFooter({ text: 'FDN — Formulário de Recrutamento' })
+    .setTimestamp();
 
   const canalId = config.canais.resultadoEdital;
   if (!canalId || canalId.startsWith('ID_')) return;
@@ -51,7 +108,7 @@ async function logEdital(client, edital, acao, responsavel) {
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId('_disabled')
-          .setLabel(aprovado ? 'Aprovado' : 'Reprovado')
+          .setLabel(aprovado ? '✅  Aprovado' : '❌  Reprovado')
           .setStyle(aprovado ? ButtonStyle.Success : ButtonStyle.Danger)
           .setDisabled(true),
       ),
@@ -59,191 +116,231 @@ async function logEdital(client, edital, acao, responsavel) {
   });
 }
 
-async function logRegistro(client, usuario, novoNick) {
-  novoNick = novoNick || `𝑭𝑫𝑵 » ${usuario.nome_mta} ${usuario.id_gamer}`;
-
-  const emojiMembro = '<:fdn_login:1516080898670596277>';
-  const emojiLogin  = '<:fdn_login:1516080898670596277>';
-  const emojiID     = '<:fdn_id:1516077731732000828>';
-
-const embed = new EmbedBuilder()
-  .setColor(config.cores.principal) // era sucesso, agora principal (vermelho)
-  .setTitle('NOVO REGISTRO | FDN')
-  .setDescription(
-    `${emojiMembro} **MEMBRO:** <@${usuario.discord_id}> [${novoNick}]\n` +
-    `${emojiLogin} **LOGIN:** ${usuario.login}\n` +
-    `${emojiID} **ID:** ${usuario.id_gamer}`
-  );
-
-  await enviarLog(client, 'registro', embed);
-}
-
-async function logRecrutamento(client, candidatura, acao, responsavel) {
-  const cor = acao === 'APROVADA' ? config.cores.sucesso : config.cores.erro;
-  const emoji = acao === 'APROVADA' ? '✅' : '❌';
-
-  const embed = new EmbedBuilder()
-    .setColor(cor)
-    .setTitle(`${emoji} Candidatura ${acao}`)
-    .addFields(
-      { name: 'Candidato', value: `<@${candidatura.discord_id}>`, inline: true },
-      { name: 'Nome', value: candidatura.nome, inline: true },
-      { name: 'ID Gamer', value: candidatura.id_gamer, inline: true },
-      { name: 'Responsável', value: `<@${responsavel}>`, inline: true },
-    )
-    .setTimestamp()
-    .setFooter({ text: 'FDN — Sistema de Recrutamento' });
-
-  await enviarLog(client, 'recrutamento', embed);
-}
-
+// ─────────────────────────────────────────────────────────────────────────────
+// PROMOÇÃO
+// ─────────────────────────────────────────────────────────────────────────────
 async function logPromocao(client, dados) {
-  const emoji = '<:iconeverd1:1515370893998555257>';
+  const ts = Math.floor(Date.now() / 1000);
 
   const embed = new EmbedBuilder()
     .setColor(config.cores.sucesso)
+    .setAuthor({ name: '⬆️  PROMOÇÃO REGISTRADA  ·  FDN' })
     .setDescription(
-      `${emoji} **Promovido:** <@${dados.usuario}>\n` +
-      `${emoji} **Cargo novo:** ${dados.cargo_novo}\n` +
-      `${emoji} **Cargo antigo:** ${dados.cargo_antigo}\n` +
-      `${emoji} **Motivo:** ${dados.motivo}\n` +
-      `─────────────────────\n` +
-      `${emoji} **Responsável:** <@${dados.responsavel}>`
+      `${SEPARADOR}\n\n` +
+      `**👤  Membro:** <@${dados.usuario}>\n` +
+      `**📉  Cargo anterior:** \`${dados.cargo_antigo}\`\n` +
+      `**📈  Novo cargo:** \`${dados.cargo_novo}\`\n` +
+      `**📝  Motivo:** ${dados.motivo}\n` +
+      `**🛡️  Responsável:** <@${dados.responsavel}>\n` +
+      `**📅  Data:** <t:${ts}:F>\n\n` +
+      `${SEPARADOR}`
     )
-    .setTimestamp()
-    .setFooter({ text: 'FDN — Sistema de Promoções' });
+    .setFooter({ text: 'FDN — Sistema de Promoções' })
+    .setTimestamp();
 
   await enviarLog(client, 'promocoes', embed);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// REBAIXAMENTO
+// ─────────────────────────────────────────────────────────────────────────────
 async function logRebaixamento(client, dados) {
-  const emoji = '<:iconvermlho1:1516115071816831086>';
+  const ts = Math.floor(Date.now() / 1000);
 
   const embed = new EmbedBuilder()
-    .setColor(config.cores.erro)
+    .setColor(config.cores.aviso)
+    .setAuthor({ name: '⬇️  REBAIXAMENTO REGISTRADO  ·  FDN' })
     .setDescription(
-      `${emoji} **Rebaixado:** <@${dados.usuario}>\n` +
-      `${emoji} **Cargo novo:** ${dados.cargo_novo}\n` +
-      `${emoji} **Cargo antigo:** ${dados.cargo_antigo}\n` +
-      `${emoji} **Motivo:** ${dados.motivo}\n` +
-      `─────────────────────\n` +
-      `${emoji} **Responsável:** <@${dados.responsavel}>`
+      `${SEPARADOR}\n\n` +
+      `**👤  Membro:** <@${dados.usuario}>\n` +
+      `**📈  Cargo anterior:** \`${dados.cargo_antigo}\`\n` +
+      `**📉  Novo cargo:** \`${dados.cargo_novo}\`\n` +
+      `**📝  Motivo:** ${dados.motivo}\n` +
+      `**🛡️  Responsável:** <@${dados.responsavel}>\n` +
+      `**📅  Data:** <t:${ts}:F>\n\n` +
+      `${SEPARADOR}`
     )
-    .setTimestamp()
-    .setFooter({ text: 'FDN — Sistema de Rebaixamentos' });
+    .setFooter({ text: 'FDN — Sistema de Rebaixamentos' })
+    .setTimestamp();
 
   await enviarLog(client, 'rebaixamentos', embed);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ADVERTÊNCIA
+// ─────────────────────────────────────────────────────────────────────────────
 async function logAdvertencia(client, dados) {
-  const emoji = '<:advicone:1516116185320783952>';
+  const ts = Math.floor(Date.now() / 1000);
 
   const embed = new EmbedBuilder()
     .setColor(config.cores.aviso)
+    .setAuthor({ name: '⚠️  ADVERTÊNCIA REGISTRADA  ·  FDN' })
     .setDescription(
-      `${emoji} **Advertido:** <@${dados.usuario}>\n` +
-      `${emoji} **Motivo:** ${dados.motivo}\n` +
-      `─────────────────────\n` +
-      `${emoji} **Responsável:** <@${dados.responsavel}>`
+      `${SEPARADOR}\n\n` +
+      `**👤  Membro advertido:** <@${dados.usuario}>\n` +
+      `**📝  Motivo:** ${dados.motivo}\n` +
+      `**🛡️  Responsável:** <@${dados.responsavel}>\n` +
+      `**📅  Data:** <t:${ts}:F>\n\n` +
+      `${SEPARADOR}`
     )
-    .setTimestamp()
-    .setFooter({ text: 'FDN — Sistema de Advertências' });
+    .setFooter({ text: 'FDN — Sistema de Advertências' })
+    .setTimestamp();
 
   await enviarLog(client, 'advertencias', embed);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EXONERAÇÃO
+// ─────────────────────────────────────────────────────────────────────────────
 async function logExoneracao(client, dados) {
-  const emoji = '<:exoicone:1516117523869995249>';
+  const ts = Math.floor(Date.now() / 1000);
 
   const embed = new EmbedBuilder()
     .setColor(config.cores.erro)
+    .setAuthor({ name: '🚫  EXONERAÇÃO REGISTRADA  ·  FDN' })
     .setDescription(
-      `${emoji} **Exonerado:** <@${dados.usuario}>\n` +
-      `${emoji} **Motivo:** ${dados.motivo}\n` +
-      `─────────────────────\n` +
-      `${emoji} **Responsável:** <@${dados.responsavel}>`
+      `${SEPARADOR}\n\n` +
+      `**👤  Membro exonerado:** <@${dados.usuario}>\n` +
+      `**📝  Motivo:** ${dados.motivo}\n` +
+      `**🛡️  Responsável:** <@${dados.responsavel}>\n` +
+      `**📅  Data:** <t:${ts}:F>\n\n` +
+      `${SEPARADOR}`
     )
-    .setTimestamp()
-    .setFooter({ text: 'FDN — Sistema de Exonerações' });
+    .setFooter({ text: 'FDN — Sistema de Exonerações' })
+    .setTimestamp();
 
   await enviarLog(client, 'exoneracoes', embed);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AUSÊNCIA
+// ─────────────────────────────────────────────────────────────────────────────
 async function logAusencia(client, ausencia, acao, responsavel) {
-  const cor = acao === 'APROVADA' ? config.cores.sucesso : acao === 'REPROVADA' ? config.cores.erro : config.cores.info;
-  const emoji = acao === 'APROVADA' ? '✅' : acao === 'REPROVADA' ? '❌' : '📋';
+  const cores = { APROVADA: config.cores.sucesso, REPROVADA: config.cores.erro, PENDENTE: config.cores.info };
+  const icone = { APROVADA: '✅', REPROVADA: '❌', PENDENTE: '📋' };
+  const ts = Math.floor(Date.now() / 1000);
 
   const embed = new EmbedBuilder()
-    .setColor(cor)
-    .setTitle(`${emoji} Ausência ${acao}`)
-    .addFields(
-      { name: 'Membro', value: `<@${ausencia.usuario}>`, inline: true },
-      { name: 'Status', value: acao, inline: true },
-      { name: 'Período', value: `${ausencia.data_inicio} → ${ausencia.data_fim}`, inline: true },
-      { name: 'Motivo', value: ausencia.motivo },
+    .setColor(cores[acao] ?? config.cores.neutro)
+    .setAuthor({ name: `${icone[acao] ?? '📋'}  AUSÊNCIA ${acao}  ·  FDN` })
+    .setDescription(
+      `${SEPARADOR}\n\n` +
+      `**👤  Membro:** <@${ausencia.usuario}>\n` +
+      `**📅  Período:** \`${ausencia.data_inicio}\` → \`${ausencia.data_fim}\`\n` +
+      `**📝  Motivo:** ${ausencia.motivo}\n` +
+      (responsavel ? `**🛡️  Responsável:** <@${responsavel}>\n` : '') +
+      `**🕐  Registrado em:** <t:${ts}:F>\n\n` +
+      `${SEPARADOR}`
     )
-    .setTimestamp()
-    .setFooter({ text: 'FDN — Sistema de Ausências' });
-
-  if (responsavel) embed.addFields({ name: 'Responsável', value: `<@${responsavel}>`, inline: true });
+    .setFooter({ text: 'FDN — Sistema de Ausências' })
+    .setTimestamp();
 
   await enviarLog(client, 'ausencias', embed);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// TICKET
+// ─────────────────────────────────────────────────────────────────────────────
 async function logTicket(client, ticket, acao) {
+  const aberto = acao === 'ABERTO';
+  const ts = Math.floor(Date.now() / 1000);
+
   const embed = new EmbedBuilder()
-    .setColor(acao === 'ABERTO' ? config.cores.info : config.cores.neutro)
-    .setTitle(`🎫 Ticket ${acao}`)
-    .addFields(
-      { name: 'Autor', value: `<@${ticket.autor_id}>`, inline: true },
-      { name: 'Tipo', value: ticket.tipo, inline: true },
-      { name: 'Canal', value: `<#${ticket.canal_id}>`, inline: true },
+    .setColor(aberto ? config.cores.info : config.cores.neutro)
+    .setAuthor({ name: `🎫  TICKET ${acao}  ·  FDN` })
+    .setDescription(
+      `${SEPARADOR}\n\n` +
+      `**👤  Autor:** <@${ticket.autor_id}>\n` +
+      `**📂  Categoria:** \`${ticket.tipo}\`\n` +
+      `**💬  Canal:** <#${ticket.canal_id}>\n` +
+      `**📋  Status:** \`${acao}\`\n` +
+      `**📅  Data:** <t:${ts}:F>\n\n` +
+      `${SEPARADOR}`
     )
-    .setTimestamp()
-    .setFooter({ text: 'FDN — Sistema de Tickets' });
+    .setFooter({ text: 'FDN — Sistema de Tickets' })
+    .setTimestamp();
 
   await enviarLog(client, 'tickets', embed);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// BATE-PONTO
+// ─────────────────────────────────────────────────────────────────────────────
 async function logBatePonto(client, dados, acao) {
   const iniciado = acao === 'LIGAR';
-  const agora = Math.floor(Date.now() / 1000);
+  const agora    = Math.floor(Date.now() / 1000);
 
-  let titulo, descricao;
+  let descricao;
 
   if (iniciado) {
-    titulo = 'PONTO INICIADO';
     descricao =
-      `🟢 **MEMBRO:** <@${dados.usuario}>\n` +
-      `🟢 **INÍCIO:** <t:${agora}:t>`;
+      `${SEPARADOR}\n\n` +
+      `**👤  Membro:** <@${dados.usuario}>\n` +
+      `**🟢  Início:** <t:${agora}:T> — <t:${agora}:d>\n\n` +
+      `${SEPARADOR}`;
   } else {
     const tsInicio = dados.inicio
       ? Math.floor(new Date(dados.inicio).getTime() / 1000)
       : agora;
-    const total = dados.tempo_total ? formatarTempo(dados.tempo_total) : '00h 00min';
+    const total  = dados.tempo_total ? formatarTempo(dados.tempo_total) : '00h 00min';
     const motivo = dados.automatico ? 'Saiu do canal de voz.' : 'Encerrou manualmente.';
 
-    titulo = 'PONTO FINALIZADO';
     descricao =
-      `🟢 **MEMBRO:** <@${dados.usuario}>\n` +
-      `🟢 **INÍCIO:** <t:${tsInicio}:t>\n` +
-      `🟢 **TÉRMINO:** <t:${agora}:t>\n` +
-      `🟢 **TOTAL:** ${total}\n` +
-      `🟢 **MOTIVO:** ${motivo}`;
+      `${SEPARADOR}\n\n` +
+      `**👤  Membro:** <@${dados.usuario}>\n` +
+      `**🟢  Início:** <t:${tsInicio}:T>\n` +
+      `**🔴  Término:** <t:${agora}:T>\n` +
+      `**⏱️  Total registrado:** \`${total}\`\n` +
+      `**📌  Motivo:** ${motivo}\n\n` +
+      `${SEPARADOR}`;
   }
 
   const embed = new EmbedBuilder()
     .setColor(iniciado ? config.cores.sucesso : config.cores.neutro)
-    .setTitle(titulo)
+    .setAuthor({ name: `${iniciado ? '🟢' : '🔴'}  PONTO ${iniciado ? 'INICIADO' : 'FINALIZADO'}  ·  FDN` })
     .setDescription(descricao)
+    .setFooter({ text: 'FDN — Sistema de Bate-Ponto' })
     .setTimestamp();
 
   await enviarLog(client, 'batePonto', embed);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PUNIÇÃO
+// ─────────────────────────────────────────────────────────────────────────────
+async function logPunicao(client, dados) {
+  const labels = {
+    PUNICAO_1: '⚠️  Punição Nível 1',
+    PUNICAO_2: '🔶  Punição Nível 2',
+    PUNICAO_3: '🔴  Punição Nível 3',
+    REMOCAO:   '🚫  Remoção',
+  };
+  const ts = Math.floor(Date.now() / 1000);
+
+  const embed = new EmbedBuilder()
+    .setColor(config.cores.erro)
+    .setAuthor({ name: `⚖️  PUNIÇÃO APLICADA  ·  FDN` })
+    .setDescription(
+      `${SEPARADOR}\n\n` +
+      `**👤  Membro punido:** <@${dados.usuario}>\n` +
+      `**⚖️  Tipo:** \`${labels[dados.tipo] ?? dados.tipo}\`\n` +
+      `**📝  Motivo:** ${dados.motivo}\n` +
+      `**🛡️  Responsável:** <@${dados.responsavel}>\n` +
+      `**📅  Data:** <t:${ts}:F>\n\n` +
+      `${SEPARADOR}`
+    )
+    .setFooter({ text: 'FDN — Sistema de Punições' })
+    .setTimestamp();
+
+  await enviarLog(client, 'punicoes', embed);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UTILITÁRIO
+// ─────────────────────────────────────────────────────────────────────────────
 function formatarTempo(segundos) {
-  const h = Math.floor(segundos / 3600);
-  const m = Math.floor((segundos % 3600) / 60);
+  const h = Math.floor(Math.abs(segundos) / 3600);
+  const m = Math.floor((Math.abs(segundos) % 3600) / 60);
   return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}min`;
 }
 
@@ -258,5 +355,6 @@ module.exports = {
   logAusencia,
   logTicket,
   logBatePonto,
+  logPunicao,
   formatarTempo,
 };

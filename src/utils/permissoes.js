@@ -1,77 +1,32 @@
-// src/utils/permissoes.js
-// Utilitários para verificação de permissões de cargos
 
 const config = require('../config');
 
-/**
- * Verifica se um membro possui ao menos um dos cargos da lista
- * @param {GuildMember} member
- * @param {string[]} cargosPermitidos - Array de IDs de cargo
- * @returns {boolean}
- */
 function temPermissao(member, cargosPermitidos) {
   if (!member || !cargosPermitidos) return false;
   return cargosPermitidos.some(id => member.roles.cache.has(id));
 }
 
-function podePRomover(member) {
-  return temPermissao(member, config.cargos.podePRomover);
-}
+const podePRomover            = m => temPermissao(m, config.cargos.podePRomover);
+const podeRebaixar            = m => temPermissao(m, config.cargos.podeRebaixar);
+const podeAdvertir            = m => temPermissao(m, config.cargos.podeAdvertir);
+const podeExonerar            = m => temPermissao(m, config.cargos.podeExonerar);
+const podeAprovarAusencia     = m => temPermissao(m, config.cargos.podeAprovarAusencia);
+const podeAprovarRecrutamento = m => temPermissao(m, config.cargos.podeAprovarRecrutamento);
+const podeAnalisarEdital      = m => temPermissao(m, config.cargos.podeAnalisarEdital);
+const podeDashboard           = m => temPermissao(m, config.cargos.podeDashboard);
+const podeTicketStaff         = m => temPermissao(m, config.cargos.podeTicketStaff);
 
-function podeRebaixar(member) {
-  return temPermissao(member, config.cargos.podeRebaixar);
-}
-
-function podeAdvertir(member) {
-  return temPermissao(member, config.cargos.podeAdvertir);
-}
-
-function podeExonerar(member) {
-  return temPermissao(member, config.cargos.podeExonerar);
-}
-
-function podeAprovarAusencia(member) {
-  return temPermissao(member, config.cargos.podeAprovarAusencia);
-}
-
-function podeAprovarRecrutamento(member) {
-  return temPermissao(member, config.cargos.podeAprovarRecrutamento);
-}
-
-function podeAnalisarEdital(member) {
-  return temPermissao(member, config.cargos.podeAnalisarEdital);
-}
-
-function podeDashboard(member) {
-  return temPermissao(member, config.cargos.podeDashboard);
-}
-
-function podeTicketStaff(member) {
-  return temPermissao(member, config.cargos.podeTicketStaff);
-}
-
-/**
- * Retorna embed de erro de permissão
- */
 function embedSemPermissao() {
   const { EmbedBuilder } = require('discord.js');
   return new EmbedBuilder()
     .setColor(config.cores.erro)
-    .setTitle('❌ Acesso Negado')
-    .setDescription('Você não tem permissão para realizar esta ação.')
+    .setTitle('🔒 Acesso Negado')
+    .setDescription('> Você não tem permissão para realizar esta ação.')
     .setTimestamp();
 }
 
 module.exports = {
-  temPermissao,
-  podePRomover,
-  podeRebaixar,
-  podeAdvertir,
-  podeExonerar,
-  podeAprovarAusencia,
-  podeAprovarRecrutamento,
-  podeAnalisarEdital,
-  podeDashboard,
-  podeTicketStaff,
-  embedSemPermissao,
+  temPermissao, podePRomover, podeRebaixar, podeAdvertir,
+  podeExonerar, podeAprovarAusencia, podeAprovarRecrutamento,
+  podeAnalisarEdital, podeDashboard, podeTicketStaff, embedSemPermissao,
 };
