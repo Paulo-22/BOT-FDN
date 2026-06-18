@@ -374,6 +374,25 @@ async function handlePunicao(interaction, tipo, usuario_id) {
   const { user, guild } = interaction;
   const motivo = interaction.fields.getTextInputValue('motivo').trim();
 
+  let duracaoDias = null;
+  let expiraEm    = null;
+
+  if (tipo !== 'REMOCAO') {
+    const duracaoStr = interaction.fields.getTextInputValue('duracao_dias')?.trim();
+    if (duracaoStr) {
+      const dias = parseInt(duracaoStr, 10);
+      if (isNaN(dias) || dias <= 0) {
+        return interaction.reply({
+          embeds: [new EmbedBuilder().setColor(config.cores.erro)
+            .setDescription('❌ Duração inválida. Informe um número de dias maior que zero, ou deixe vazio para punição permanente.')],
+          ephemeral: true,
+        });
+      }
+      duracaoDias = dias;
+      expiraEm = new Date(Date.now() + dias * 24 * 60 * 60 * 1000);
+    }
+  }
+
   const alvo = await prisma.usuario.findUnique({ where: { discord_id: usuario_id } });
   if (!alvo) {
     return interaction.reply({
@@ -407,24 +426,43 @@ async function handlePunicao(interaction, tipo, usuario_id) {
     }
   }
 
-  await prisma.punicao.create({ data: { usuario: usuario_id, responsavel: user.id, tipo, motivo } });
+  await prisma.punicao.create({
+    data: {
+      usuario: usuario_id,
+      responsavel: user.id,
+      tipo,
+      motivo,
+      duracao_dias: duracaoDias,
+      expira_em: expiraEm,
+    },
+  });
 
   const label = LABELS_PUNICAO[tipo] ?? tipo;
 
   membro?.send({
     embeds: [new EmbedBuilder().setColor(config.cores.erro)
       .setTitle(`${label} Aplicada`)
-      .setDescription(`**Motivo:** ${motivo}\n**Responsável:** <@${user.id}>`)
+      .setDescription(
+        `**Motivo:** ${motivo}\n` +
+        `**Responsável:** <@${user.id}>` +
+        (expiraEm ? `\n**Duração:** ${duracaoDias} dia(s) — expira <t:${Math.floor(expiraEm.getTime() / 1000)}:F>` : '')
+      )
       .setTimestamp()],
   }).catch(() => {});
 
-  await logger.logPunicao(interaction.client, { usuario: usuario_id, responsavel: user.id, tipo, motivo });
+  await logger.logPunicao(interaction.client, { usuario: usuario_id, responsavel: user.id, tipo, motivo, duracao_dias: duracaoDias });
 
   return interaction.reply({
     embeds: [
       new EmbedBuilder()
         .setColor(config.cores.sucesso)
-        .setDescription(`✅ **${label}** aplicada a <@${usuario_id}>.\n\n**Motivo:** ${motivo}`)
+        .setDescription(
+          `✅ **${label}** aplicada a <@${usuario_id}>.\n\n` +
+          `**Motivo:** ${motivo}\n` +
+          (expiraEm
+            ? `**Duração:** ${duracaoDias} dia(s) — expira <t:${Math.floor(expiraEm.getTime() / 1000)}:F>`
+            : '**Duração:** Permanente')
+        )
         .setTimestamp(),
     ],
     ephemeral: true,

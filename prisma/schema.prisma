@@ -80,12 +80,18 @@ model Advertencia {
 }
 
 model Punicao {
-  id          Int      @id @default(autoincrement())
-  usuario     String
-  responsavel String
-  tipo        String   // PUNICAO_1, PUNICAO_2, PUNICAO_3, REMOCAO
-  motivo      String
-  data        DateTime @default(now())
+  id            Int       @id @default(autoincrement())
+  usuario       String
+  responsavel   String
+  tipo          String    // PUNICAO_1, PUNICAO_2, PUNICAO_3, REMOCAO
+  motivo        String
+  data          DateTime  @default(now())
+
+  // Expiração automática (não se aplica a REMOCAO, que é permanente)
+  duracao_dias  Int?      // null = sem expiração / permanente
+  expira_em     DateTime? // null = sem expiração / permanente
+  status        String    @default("ATIVA") // ATIVA, EXPIRADA, REMOVIDA_MANUAL
+  removida_em   DateTime?
 
   user Usuario @relation("UsuarioPunido",      fields: [usuario],     references: [discord_id])
   resp Usuario @relation("ResponsavelPunicao", fields: [responsavel], references: [discord_id])

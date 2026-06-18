@@ -1,4 +1,4 @@
-
+// src/logs/logger.js
 // Sistema centralizado de logs — FDN (redesenhado)
 
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -338,7 +338,40 @@ async function logPunicao(client, dados) {
       `**⚖️  Tipo:** \`${labels[dados.tipo] ?? dados.tipo}\`\n` +
       `**📝  Motivo:** ${dados.motivo}\n` +
       `**🛡️  Responsável:** <@${dados.responsavel}>\n` +
+      (dados.duracao_dias
+        ? `**⏳  Duração:** \`${dados.duracao_dias} dia(s)\`\n`
+        : `**⏳  Duração:** \`Permanente\`\n`) +
       `**📅  Data:** <t:${ts}:F>\n\n` +
+      `${SEPARADOR}`
+    )
+    .setFooter({ text: 'FDN — Sistema de Punições' })
+    .setTimestamp();
+
+  await enviarLog(client, 'punicoes', embed);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUNIÇÃO EXPIRADA (remoção automática pelo scheduler)
+// ─────────────────────────────────────────────────────────────────────────────
+async function logPunicaoExpirada(client, punicao) {
+  const labels = {
+    PUNICAO_1: '⚠️  Punição Nível 1',
+    PUNICAO_2: '🔶  Punição Nível 2',
+    PUNICAO_3: '🔴  Punição Nível 3',
+    REMOCAO:   '🚫  Remoção',
+  };
+  const ts = Math.floor(Date.now() / 1000);
+
+  const embed = new EmbedBuilder()
+    .setColor(config.cores.sucesso)
+    .setAuthor({ name: `✅  PUNIÇÃO EXPIRADA  ·  FDN` })
+    .setDescription(
+      `${SEPARADOR}\n\n` +
+      `**👤  Membro:** <@${punicao.usuario}>\n` +
+      `**⚖️  Tipo:** \`${labels[punicao.tipo] ?? punicao.tipo}\`\n` +
+      `**📝  Motivo original:** ${punicao.motivo}\n` +
+      `> O cargo de punição foi **removido automaticamente** após o período definido.\n\n` +
+      `**📅  Removida em:** <t:${ts}:F>\n\n` +
       `${SEPARADOR}`
     )
     .setFooter({ text: 'FDN — Sistema de Punições' })
@@ -368,5 +401,6 @@ module.exports = {
   logTicket,
   logBatePonto,
   logPunicao,
+  logPunicaoExpirada,
   formatarTempo,
 };

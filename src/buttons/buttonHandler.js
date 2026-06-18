@@ -1,5 +1,3 @@
-
-
 const {
   EmbedBuilder,
   ActionRowBuilder,
@@ -46,8 +44,27 @@ function disableRow(label, style) {
   ];
 }
 
-async function userSelect(interaction, acao, titulo, placeholder) {
-  return interaction.reply({
+// Títulos/placeholders por ação — usados tanto na primeira abertura (reply)
+// quanto ao reabrir via botão "Selecionar outro membro" (update).
+const TITULOS_USER_SELECT = {
+  promover:  { titulo: '⬆️ Promover Membro',   placeholder: 'Selecione o membro...' },
+  rebaixar:  { titulo: '⬇️ Rebaixar Membro',   placeholder: 'Selecione o membro...' },
+  advertir:  { titulo: '⚠️ Advertir Membro',   placeholder: 'Selecione o membro...' },
+  exonerar:  { titulo: '🚫 Exonerar Membro',   placeholder: 'Selecione o membro...' },
+  add_horas: { titulo: '➕ Adicionar Horas',   placeholder: 'Selecione o membro...' },
+  rem_horas: { titulo: '➖ Remover Horas',     placeholder: 'Selecione o membro...' },
+  consultar: { titulo: '📊 Consultar Membro',  placeholder: 'Selecione o membro...' },
+};
+
+const LABELS_PUNICAO = {
+  PUNICAO_1: '⚠️ Punição Nível 1',
+  PUNICAO_2: '🔶 Punição Nível 2',
+  PUNICAO_3: '🔴 Punição Nível 3',
+  REMOCAO:   '🚫 Remoção',
+};
+
+function userSelectPayload(titulo, placeholder, acao) {
+  return {
     embeds: [
       new EmbedBuilder()
         .setColor(config.cores.principal)
@@ -62,8 +79,56 @@ async function userSelect(interaction, acao, titulo, placeholder) {
           .setMinValues(1).setMaxValues(1),
       ),
     ],
-    ephemeral: true,
-  });
+  };
+}
+
+async function userSelect(interaction, acao, titulo, placeholder) {
+  return interaction.reply({ ...userSelectPayload(titulo, placeholder, acao), ephemeral: true });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOTÃO "SELECIONAR OUTRO MEMBRO" — reabre o UserSelectMenu na mesma mensagem
+// customId: btn_voltar_select_<acao>  (ex: btn_voltar_select_promover,
+//           btn_voltar_select_punicao_PUNICAO_1)
+// ─────────────────────────────────────────────────────────────────────────────
+async function handleVoltarSelect(interaction) {
+  const resto = interaction.customId.replace('btn_voltar_select_', '');
+
+  if (resto.startsWith('punicao_')) {
+    const tipo  = resto.replace('punicao_', '');
+    const label = LABELS_PUNICAO[tipo] ?? 'Punição';
+
+    return interaction.update({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(config.cores.aviso)
+          .setAuthor({ name: `⚖️  ${label.toUpperCase()}  ·  FDN` })
+          .setDescription(
+            `${SEPARADOR}\n\n` +
+            `Selecione o **membro** que receberá esta punição:\n\n` +
+            `${SEPARADOR}`
+          ),
+      ],
+      components: [
+        new ActionRowBuilder().addComponents(
+          new UserSelectMenuBuilder()
+            .setCustomId(`userselect_punicao_${tipo}`)
+            .setPlaceholder('Selecione o membro...')
+            .setMinValues(1).setMaxValues(1),
+        ),
+      ],
+    });
+  }
+
+  const info = TITULOS_USER_SELECT[resto];
+  if (!info) {
+    return interaction.update({
+      embeds: [new EmbedBuilder().setColor(config.cores.neutro).setDescription('❌ Ação inválida.')],
+      components: [],
+    });
+  }
+
+  return interaction.update(userSelectPayload(info.titulo, info.placeholder, resto));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,6 +143,10 @@ async function handleButton(interaction) {
     if (customId === 'btn_iniciar_edital')     return interaction.showModal(modals.modalEditalNome());
     if (customId === 'btn_transferencia')      return interaction.showModal(modals.modalTransferencia());
     if (customId === 'btn_solicitar_ausencia') return interaction.showModal(modals.modalAusencia());
+
+    // Reabrir seleção de membro (botão "Selecionar outro membro")
+    if (customId.startsWith('btn_voltar_select_'))
+      return handleVoltarSelect(interaction);
 
     // Edital
     if (customId.startsWith('btn_responder_edital_'))

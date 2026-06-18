@@ -1,4 +1,3 @@
-
 // Ponto de entrada do bot FDN
 
 require('dotenv').config();
@@ -7,6 +6,7 @@ const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js'
 const fs = require('fs');
 const path = require('path');
 const { conectar } = require('./database/client');
+const punicaoScheduler = require('./services/punicaoScheduler');
 
 // ============================================================
 // INICIALIZAR CLIENT
@@ -38,6 +38,13 @@ for (const arquivo of arquivosEventos) {
   }
   console.log(`📡 Evento carregado: ${evento.name}`);
 }
+
+// ============================================================
+// TAREFAS EM BACKGROUND (rodam após o bot estar pronto)
+// ============================================================
+client.once('ready', () => {
+  punicaoScheduler.iniciar(client);
+});
 
 // ============================================================
 // INICIAR

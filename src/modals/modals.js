@@ -72,7 +72,9 @@ function modalAusencia() {
     );
 }
 
-// ── Punição (via UserSelectMenu — só pede o motivo) ──
+// ── Punição (via UserSelectMenu — pede motivo e, se aplicável, duração) ──
+// REMOCAO é permanente e não tem campo de duração.
+// PUNICAO_1/2/3 pedem duração em dias (opcional — vazio = permanente).
 
 function modalMotivoPunicao(tipo, userId) {
   const labels = {
@@ -81,15 +83,27 @@ function modalMotivoPunicao(tipo, userId) {
     PUNICAO_3: '🔴 Punição Nível 3',
     REMOCAO:   '🚫 Remoção',
   };
+
+  const componentes = [
+    row(
+      input('motivo', 'Motivo da punição', TextInputStyle.Paragraph, true, 500)
+        .setPlaceholder('Descreva o motivo da punição...'),
+    ),
+  ];
+
+  if (tipo !== 'REMOCAO') {
+    componentes.push(
+      row(
+        input('duracao_dias', 'Duração em dias (vazio = permanente)', TextInputStyle.Short, false, 4)
+          .setPlaceholder('Ex: 7'),
+      ),
+    );
+  }
+
   return new ModalBuilder()
     .setCustomId(`modal_motivo_punicao_${tipo}_${userId}`)
     .setTitle(labels[tipo] || 'Punição')
-    .addComponents(
-      row(
-        input('motivo', 'Motivo da punição', TextInputStyle.Paragraph, true, 500)
-          .setPlaceholder('Descreva o motivo da punição...'),
-      ),
-    );
+    .addComponents(...componentes);
 }
 
 // ── Advertência ──────────────────────────────

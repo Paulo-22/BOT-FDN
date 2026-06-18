@@ -23,6 +23,33 @@ const LABELS_PUNICAO = {
   REMOCAO:   '🚫 Remoção',
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER — mensagem padrão de "membro não registrado" com botão de voltar
+// ─────────────────────────────────────────────────────────────────────────────
+function membroNaoRegistrado(userId, nome, customIdVoltar) {
+  return {
+    embeds: [
+      new EmbedBuilder()
+        .setColor(config.cores.erro)
+        .setAuthor({ name: '❌  MEMBRO NÃO REGISTRADO  ·  FDN' })
+        .setDescription(
+          `${SEPARADOR}\n\n` +
+          `> **${nome}** (<@${userId}>) não realizou o registro na FDN.\n\n` +
+          `Apenas membros registrados podem ser gerenciados por este painel.\n\n` +
+          `${SEPARADOR}`
+        ),
+    ],
+    components: [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(customIdVoltar)
+          .setLabel('🔄  Selecionar outro membro')
+          .setStyle(ButtonStyle.Secondary),
+      ),
+    ],
+  };
+}
+
 async function handleSelect(interaction) {
   const { customId, values } = interaction;
   try {
@@ -81,20 +108,11 @@ async function handlePunicaoUsuarioSelecionado(interaction, tipo, userId) {
   const registrado = await prisma.usuario.findUnique({ where: { discord_id: userId } });
 
   if (!registrado) {
-    return interaction.update({
-      embeds: [
-        new EmbedBuilder()
-          .setColor(config.cores.erro)
-          .setAuthor({ name: '❌  MEMBRO NÃO REGISTRADO  ·  FDN' })
-          .setDescription(
-            `${SEPARADOR}\n\n` +
-            `> <@${userId}> não realizou o registro na FDN.\n\n` +
-            `Apenas membros registrados podem ser punidos por este painel.\n\n` +
-            `${SEPARADOR}`
-          ),
-      ],
-      components: [],
-    });
+    const membro = await interaction.guild.members.fetch(userId).catch(() => null);
+    const nome   = membro?.displayName ?? `<@${userId}>`;
+    return interaction.update(
+      membroNaoRegistrado(userId, nome, `btn_voltar_select_punicao_${tipo}`),
+    );
   }
 
   return interaction.showModal(modals.modalMotivoPunicao(tipo, userId));
@@ -109,20 +127,9 @@ async function handleUserSelecionado(interaction, acao, userId) {
 
   const registrado = await prisma.usuario.findUnique({ where: { discord_id: userId } });
   if (!registrado) {
-    return interaction.update({
-      embeds: [
-        new EmbedBuilder()
-          .setColor(config.cores.erro)
-          .setAuthor({ name: '❌  MEMBRO NÃO REGISTRADO  ·  FDN' })
-          .setDescription(
-            `${SEPARADOR}\n\n` +
-            `> **${nome}** (<@${userId}>) não realizou o registro na FDN.\n\n` +
-            `Apenas membros registrados podem ser gerenciados por este painel.\n\n` +
-            `${SEPARADOR}`
-          ),
-      ],
-      components: [],
-    });
+    return interaction.update(
+      membroNaoRegistrado(userId, nome, `btn_voltar_select_${acao}`),
+    );
   }
 
   if (acao === 'promover') {
@@ -132,7 +139,14 @@ async function handleUserSelecionado(interaction, acao, userId) {
       return interaction.update({
         embeds: [new EmbedBuilder().setColor(config.cores.aviso)
           .setDescription(`⚠️ **${nome}** já está no cargo máximo da hierarquia.`)],
-        components: [],
+        components: [
+          new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId(`btn_voltar_select_${acao}`)
+              .setLabel('🔄  Selecionar outro membro')
+              .setStyle(ButtonStyle.Secondary),
+          ),
+        ],
       });
     }
     return interaction.update({
@@ -154,7 +168,14 @@ async function handleUserSelecionado(interaction, acao, userId) {
       return interaction.update({
         embeds: [new EmbedBuilder().setColor(config.cores.aviso)
           .setDescription(`⚠️ **${nome}** não pode ser rebaixado (já está no cargo mínimo ou sem cargo).`)],
-        components: [],
+        components: [
+          new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId(`btn_voltar_select_${acao}`)
+              .setLabel('🔄  Selecionar outro membro')
+              .setStyle(ButtonStyle.Secondary),
+          ),
+        ],
       });
     }
     return interaction.update({
@@ -194,7 +215,7 @@ async function handleUserSelecionado(interaction, acao, userId) {
         new ActionRowBuilder().addComponents(
           new ButtonBuilder().setCustomId(`btn_prosseguir_exonerar_${userId}`)
             .setLabel('Sim, exonerar').setStyle(ButtonStyle.Danger).setEmoji('🚫'),
-          new ButtonBuilder().setCustomId('btn_cancelar_acao_')
+          new ButtonBuilder().setCustomId(`btn_voltar_select_${acao}`)
             .setLabel('Cancelar').setStyle(ButtonStyle.Secondary),
         ),
       ],
@@ -220,7 +241,14 @@ async function handleCargoSelecionado(interaction, acao, userId, roleId) {
     return interaction.update({
       embeds: [new EmbedBuilder().setColor(config.cores.aviso)
         .setDescription(`⚠️ O cargo **${role?.name ?? roleId}** não pertence à hierarquia da FDN.`)],
-      components: [],
+      components: [
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`btn_voltar_select_${acao === 'promocao' ? 'promover' : 'rebaixar'}`)
+            .setLabel('🔄  Selecionar outro membro')
+            .setStyle(ButtonStyle.Secondary),
+        ),
+      ],
     });
   }
   return interaction.showModal(modals.modalMotivo(acao, userId, roleId, cargoFDN.nome));

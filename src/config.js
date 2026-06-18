@@ -2,14 +2,18 @@
 // Configuração central do bot FDN
 
 module.exports = {
+  // ID do servidor (guild) onde o bot opera. Necessário para tarefas em
+  // background que não recebem uma `interaction` (ex: scheduler de punições).
+  guildId: '1261915854459764766',
+
   // ============================================
   // CARGOS DA FACÇÃO (IDs dos cargos no Discord)
   // ============================================
   cargos: {
     admin:       '1515212078137479268',
-    Dono:       '1265868309467762729',
-    SubFundador:    '1265868312504696833',
-    Fundador: '1265868313662197851',
+    lider:       '1265868309467762729',
+    subLider:    '1265868312504696833',
+    coordenador: '1265868313662197851',
 
     // Hierarquia completa (índice 0 = mais baixo)
     hierarquia: [
