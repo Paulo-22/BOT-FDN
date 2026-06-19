@@ -133,7 +133,8 @@ function painelBatePonto() {
       'Para finalizar o registro, o membro deve permanecer no canal de voz e ' +
       'utilizar o botão **\'DESLIGAR\'** para que o ponto seja contabilizado. ' +
       'Caso o membro saia do canal de voz sem utilizar o comando o ponto é finalizado automaticamente.\n\n' +
-      'Para verificar o total de horas registradas, basta clicar no botão **\'HORAS\'**.'
+      'Para verificar o total de horas registradas, basta clicar no botão **\'HORAS\'**.\n\n' +
+      'Para ver o ranking de atividade da facção, clique no botão **\'RANKING\'**.'
     )
     .setImage(BANNER_BATEPONTO);
 
@@ -149,6 +150,10 @@ function painelBatePonto() {
     new ButtonBuilder()
       .setCustomId('btn_minhas_horas')
       .setLabel('HORAS')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('btn_ranking')
+      .setLabel('RANKING')
       .setStyle(ButtonStyle.Secondary),
   );
 

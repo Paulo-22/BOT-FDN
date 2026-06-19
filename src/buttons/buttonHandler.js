@@ -10,6 +10,7 @@ const {
 const config        = require('../config');
 const modals        = require('../modals/modals');
 const horasService  = require('../services/horasService');
+const rankingService = require('../services/rankingService');
 const editalService = require('../services/editalService');
 const { prisma }    = require('../database/client');
 const logger        = require('../logs/logger');
@@ -326,7 +327,7 @@ async function handleDesligar(interaction) {
   const tsInicio = Math.floor(new Date(resultado.hora.inicio).getTime() / 1000);
   const tsFim    = Math.floor(Date.now() / 1000);
 
-  return interaction.reply({
+  await interaction.reply({
     embeds: [
       new EmbedBuilder()
         .setColor(config.cores.neutro)
@@ -345,68 +346,41 @@ async function handleDesligar(interaction) {
     ],
     ephemeral: true,
   });
+
+  // Checa se essa sessão fez o membro bater a meta do cargo neste mês.
+  // verificarMeta() só retorna atingiu:true na primeira vez no mês (trava no banco).
+  const metaResultado = await rankingService.verificarMeta(interaction.member).catch(() => ({ atingiu: false }));
+  if (metaResultado.atingiu) {
+    await interaction.followUp({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(config.cores.sucesso)
+          .setAuthor({ name: '🎯  META BATIDA  ·  FDN' })
+          .setDescription(
+            `${SEPARADOR}\n\n` +
+            `> Parabéns, ${interaction.user}! Você bateu a meta de horas do seu cargo este mês! 🎉\n\n` +
+            `**Cargo:** \`${metaResultado.meta.nome}\`\n` +
+            `**Meta:** \`${metaResultado.meta.horasMeta}h\`\n` +
+            `**Registrado no mês:** \`${rankingService.formatarTempo(metaResultado.totalMes)}\`\n\n` +
+            `${SEPARADOR}`
+          )
+          .setFooter({ text: 'FDN — Controle de Ponto' })
+          .setTimestamp(),
+      ],
+      ephemeral: true,
+    }).catch(() => {});
+  }
 }
 
 async function handleMinhasHoras(interaction) {
-  const stats = await horasService.getEstatisticas(interaction.user.id);
-  return interaction.reply({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(config.cores.info)
-        .setAuthor({ name: '⏱️  MINHAS HORAS  ·  FDN' })
-        .setDescription(
-          `${SEPARADOR}\n\n` +
-          `**👤  Membro:** ${interaction.user}\n\n` +
-          `**📅  Hoje:** \`${logger.formatarTempo(stats.hoje)}\`\n` +
-          `**📆  Esta semana:** \`${logger.formatarTempo(stats.semana)}\`\n` +
-          `**🗓️  Este mês:** \`${logger.formatarTempo(stats.mes)}\`\n\n` +
-          `**🏆  Total geral:** \`${logger.formatarTempo(stats.total)}\`\n\n` +
-          `${SEPARADOR}`
-        )
-        .setFooter({ text: 'FDN — Estatísticas de Ponto' })
-        .setTimestamp(),
-    ],
-    ephemeral: true,
-  });
+  const embed = await rankingService.embedMinhasHoras(interaction.member);
+  return interaction.reply({ embeds: [embed], ephemeral: true });
 }
 
 async function handleRanking(interaction) {
   await interaction.deferReply({ ephemeral: true });
-
-  const agora = new Date();
-  const inicioSemana = new Date(agora);
-  inicioSemana.setDate(agora.getDate() - agora.getDay() + 1);
-  inicioSemana.setHours(0, 0, 0, 0);
-  const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
-
-  const [geral, semanal, mensal] = await Promise.all([
-    horasService.getRankingGeral(),
-    horasService.getRankingPeriodo(inicioSemana),
-    horasService.getRankingPeriodo(inicioMes),
-  ]);
-
-  const medalhas = ['🥇', '🥈', '🥉'];
-  const fmt = (arr) =>
-    arr.length
-      ? arr.map((r, i) => `${medalhas[i] ?? '🏅'} <@${r.usuario}> — \`${logger.formatarTempo(r.total)}\``).join('\n')
-      : '_Nenhum registro encontrado._';
-
-  return interaction.editReply({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(config.cores.gold)
-        .setAuthor({ name: '🏆  RANKING DE ATIVIDADE  ·  FDN' })
-        .setDescription(
-          `${SEPARADOR}\n\n` +
-          `**🥇  Ranking Geral**\n${fmt(geral)}\n\n` +
-          `**📆  Ranking Semanal**\n${fmt(semanal)}\n\n` +
-          `**🗓️  Ranking Mensal**\n${fmt(mensal)}\n\n` +
-          `${SEPARADOR}`
-        )
-        .setFooter({ text: 'FDN — Estatísticas da Facção' })
-        .setTimestamp(),
-    ],
-  });
+  const embed = await rankingService.embedRanking();
+  return interaction.editReply({ embeds: [embed] });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
