@@ -22,17 +22,19 @@ model Usuario {
 
   horas                 Hora[]
   ausencias             Ausencia[]
-  advertencias          Advertencia[]  @relation("UsuarioAdvertido")
-  advertenciasAplicadas Advertencia[]  @relation("ResponsavelAdvertencia")
-  promocoes             Promocao[]     @relation("UsuarioPromovido")
-  promocoesFeitas       Promocao[]     @relation("ResponsavelPromocao")
-  rebaixamentos         Rebaixamento[] @relation("UsuarioRebaixado")
-  rebaixamentosFeitos   Rebaixamento[] @relation("ResponsavelRebaixamento")
-  exoneracoes           Exoneracao[]   @relation("UsuarioExonerado")
-  exoneracoesFeitas     Exoneracao[]   @relation("ResponsavelExoneracao")
-  punicoes              Punicao[]      @relation("UsuarioPunido")
-  punicoesAplicadas     Punicao[]      @relation("ResponsavelPunicao")
-  transferencias        Transferencia[] @relation("UsuarioTransferido")
+  advertencias          Advertencia[]     @relation("UsuarioAdvertido")
+  advertenciasAplicadas Advertencia[]     @relation("ResponsavelAdvertencia")
+  promocoes             Promocao[]        @relation("UsuarioPromovido")
+  promocoesFeitas       Promocao[]        @relation("ResponsavelPromocao")
+  rebaixamentos         Rebaixamento[]    @relation("UsuarioRebaixado")
+  rebaixamentosFeitos   Rebaixamento[]    @relation("ResponsavelRebaixamento")
+  exoneracoes           Exoneracao[]      @relation("UsuarioExonerado")
+  exoneracoesFeitas     Exoneracao[]      @relation("ResponsavelExoneracao")
+  punicoes              Punicao[]         @relation("UsuarioPunido")
+  punicoesAplicadas     Punicao[]         @relation("ResponsavelPunicao")
+  transferencias        Transferencia[]   @relation("UsuarioTransferido")
+  rankingSnapshots      RankingSnapshot[]
+  metasAtingidas        MetaAtingida[]
 
   @@map("usuarios")
 }
@@ -198,4 +200,44 @@ model Ticket {
   fechado_em DateTime?
 
   @@map("tickets")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SISTEMA DE RANKING — models adicionados para o rankingService.js / scheduler.js
+// ─────────────────────────────────────────────────────────────────────────────
+
+model RankingSnapshot {
+  id        Int      @id @default(autoincrement())
+  usuario   String
+  mes       DateTime
+  total     Int
+  criado_em DateTime @default(now())
+
+  user Usuario @relation(fields: [usuario], references: [discord_id])
+
+  @@unique([usuario, mes], name: "usuario_mes")
+  @@map("ranking_snapshots")
+}
+
+// Garante que a notificação de "meta batida" só dispare uma vez por usuário/mês
+model MetaAtingida {
+  id            Int      @id @default(autoincrement())
+  usuario       String
+  mes           DateTime
+  notificado_em DateTime @default(now())
+
+  user Usuario @relation(fields: [usuario], references: [discord_id])
+
+  @@unique([usuario, mes], name: "usuario_mes_meta")
+  @@map("metas_atingidas")
+}
+
+// Tabela genérica de chave/valor para estado que precisa sobreviver a restarts do bot
+// (usada hoje pelo scheduler para lembrar o último mês em que o reset mensal rodou)
+model EstadoSistema {
+  chave         String   @id
+  valor_texto   String?
+  atualizado_em DateTime @updatedAt
+
+  @@map("estado_sistema")
 }
