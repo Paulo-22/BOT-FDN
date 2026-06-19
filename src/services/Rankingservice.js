@@ -8,7 +8,7 @@ const config           = require('../config');
 const SEPARADOR = '▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// METAS POR CARGO (em horas mensais)
+// METAS POR CARGO (em horas mensais
 // ID do cargo → horas exigidas
 // ─────────────────────────────────────────────────────────────────────────────
 const METAS_POR_CARGO = {
