@@ -93,12 +93,13 @@ module.exports = {
   canais: {
     registro:         '1389278353143369818',
     recrutamento:     '1389279188724224062',
+    transferencia:    '1518328266165850282',
     analise:          '1515128153721274550',
 
     // Canal de análise EXCLUSIVO para solicitações de transferência
     // (separado do canal de análise de candidatura/edital).
     // Troque pelo ID real do canal.
-    analiseTransferencia: '1265868625315762287',
+    analiseTransferencia: '1518331733739700305',
 
     batePonto:        '1304235934073749644',
     ausencias:        '1304237408425873488',

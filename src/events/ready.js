@@ -39,6 +39,10 @@ async function configurarPaineis(client) {
       painel: paineis.painelEdital(),
     },
     {
+      canalId: config.canais.transferencia,
+      painel: paineis.painelTransferencia(),
+    },
+    {
       canalId: config.canais.batePonto,
       painel: paineis.painelBatePonto(),
     },
