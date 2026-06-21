@@ -212,9 +212,6 @@ async function handleRemoverPunicaoUsuarioSelecionado(interaction, userId) {
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIRMA E EXECUTA A REMOÇÃO MANUAL DA PUNIÇÃO ESCOLHIDA
 // ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-// CONFIRMA E EXECUTA A REMOÇÃO MANUAL DA PUNIÇÃO ESCOLHIDA
-// ─────────────────────────────────────────────────────────────────────────────
 async function handleConfirmarRemocaoPunicao(interaction, userId, punicaoId) {
   const punicao = await prisma.punicao.findUnique({ where: { id: punicaoId } });
 
@@ -229,12 +226,11 @@ async function handleConfirmarRemocaoPunicao(interaction, userId, punicaoId) {
     });
   }
 
-  // Responde de imediato (defer) sem tocar na mensagem do painel.
+  // Responde com uma mensagem própria, sem tocar na mensagem do painel/select original.
   await interaction.deferReply({ ephemeral: true });
 
   await punicaoScheduler.removerPunicao(interaction.client, punicao, 'REMOVIDA_MANUAL', interaction.user.id);
 
-  // Confirmação vai numa resposta própria, não mexe no painel.
   await interaction.editReply({
     embeds: [
       new EmbedBuilder()
@@ -249,34 +245,7 @@ async function handleConfirmarRemocaoPunicao(interaction, userId, punicaoId) {
         ),
     ],
   });
-
-  // Painel volta para o select de "escolher outro membro", continua intacto e funcional.
-  await interaction.editReply.bind(interaction); // no-op guard, remover se não precisar
 }
-
-  await interaction.update({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(config.cores.info)
-        .setDescription(`⏳ Removendo punição de <@${userId}>...`),
-    ],
-    components: [],
-  });
-
-  await punicaoScheduler.removerPunicao(interaction.client, punicao, 'REMOVIDA_MANUAL', interaction.user.id);
-
-  return interaction.followUp({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(config.cores.sucesso)
-        .setDescription(
-          `✅ Punição **${LABELS_PUNICAO[punicao.tipo] ?? punicao.tipo}** de <@${userId}> foi removida.\n` +
-          `**Motivo original:** ${punicao.motivo}`
-        ),
-    ],
-    ephemeral: true,
-  });
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MEMBRO SELECIONADO
