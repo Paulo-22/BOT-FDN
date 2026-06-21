@@ -52,9 +52,65 @@ function membroNaoRegistrado(userId, nome, customIdVoltar) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYLOADS DO FLUXO DE PUNIÇÃO — usados tanto no reply() inicial quanto nos
+// update()s seguintes dentro da MESMA mensagem efêmera (nunca no painel fixo).
+// ─────────────────────────────────────────────────────────────────────────────
+function payloadSelecionarMembroPunicao(tipo) {
+  const label = LABELS_PUNICAO[tipo] ?? 'Punição';
+  return {
+    embeds: [
+      new EmbedBuilder()
+        .setColor(config.cores.aviso)
+        .setAuthor({ name: `⚖️  ${label.toUpperCase()}  ·  FDN` })
+        .setDescription(
+          `${SEPARADOR}\n\n` +
+          `Selecione o **membro** que receberá esta punição:\n\n` +
+          `${SEPARADOR}`
+        ),
+    ],
+    components: [
+      new ActionRowBuilder().addComponents(
+        new UserSelectMenuBuilder()
+          .setCustomId(`userselect_punicao_${tipo}`)
+          .setPlaceholder('Selecione o membro...')
+          .setMinValues(1).setMaxValues(1),
+      ),
+    ],
+  };
+}
+
+function payloadSelecionarMembroRemover() {
+  return {
+    embeds: [
+      new EmbedBuilder()
+        .setColor(config.cores.info)
+        .setAuthor({ name: '🔄  REMOVER PUNIÇÃO  ·  FDN' })
+        .setDescription(
+          `${SEPARADOR}\n\n` +
+          `Selecione o **membro** para ver as punições ativas:\n\n` +
+          `${SEPARADOR}`
+        ),
+    ],
+    components: [
+      new ActionRowBuilder().addComponents(
+        new UserSelectMenuBuilder()
+          .setCustomId('userselect_remover_punicao')
+          .setPlaceholder('Selecione o membro...')
+          .setMinValues(1).setMaxValues(1),
+      ),
+    ],
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROTEADOR DE SELECTS
+// ─────────────────────────────────────────────────────────────────────────────
 async function handleSelect(interaction) {
   const { customId, values } = interaction;
   try {
+    // Primeiro clique no menu fixo do painel — SEMPRE reply() efêmero,
+    // nunca update(), para o painel original jamais ser tocado.
     if (customId === 'menu_punicao') {
       if (!perm.podeAdvertir(interaction.member))
         return interaction.reply({ content: '❌ Sem permissão.', ephemeral: true });
@@ -62,52 +118,14 @@ async function handleSelect(interaction) {
       const tipo = values[0];
 
       if (tipo === 'REMOVER') {
-        return interaction.update({
-          embeds: [
-            new EmbedBuilder()
-              .setColor(config.cores.info)
-              .setAuthor({ name: '🔄  REMOVER PUNIÇÃO  ·  FDN' })
-              .setDescription(
-                `${SEPARADOR}\n\n` +
-                `Selecione o **membro** para ver as punições ativas:\n\n` +
-                `${SEPARADOR}`
-              ),
-          ],
-          components: [
-            new ActionRowBuilder().addComponents(
-              new UserSelectMenuBuilder()
-                .setCustomId('userselect_remover_punicao')
-                .setPlaceholder('Selecione o membro...')
-                .setMinValues(1).setMaxValues(1),
-            ),
-          ],
-        });
+        return interaction.reply({ ...payloadSelecionarMembroRemover(), ephemeral: true });
       }
 
-      const label = LABELS_PUNICAO[tipo] ?? 'Punição';
-
-      return interaction.update({
-        embeds: [
-          new EmbedBuilder()
-            .setColor(config.cores.aviso)
-            .setAuthor({ name: `⚖️  ${label.toUpperCase()}  ·  FDN` })
-            .setDescription(
-              `${SEPARADOR}\n\n` +
-              `Selecione o **membro** que receberá esta punição:\n\n` +
-              `${SEPARADOR}`
-            ),
-        ],
-        components: [
-          new ActionRowBuilder().addComponents(
-            new UserSelectMenuBuilder()
-              .setCustomId(`userselect_punicao_${tipo}`)
-              .setPlaceholder('Selecione o membro...')
-              .setMinValues(1).setMaxValues(1),
-          ),
-        ],
-      });
+      return interaction.reply({ ...payloadSelecionarMembroPunicao(tipo), ephemeral: true });
     }
 
+    // A partir daqui, todas as interações vieram de DENTRO da mensagem
+    // efêmera aberta acima — então update() é seguro, edita só ela.
     if (customId.startsWith('userselect_punicao_')) {
       const tipo = customId.replace('userselect_punicao_', '');
       return handlePunicaoUsuarioSelecionado(interaction, tipo, values[0]);
@@ -211,6 +229,8 @@ async function handleRemoverPunicaoUsuarioSelecionado(interaction, userId) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIRMA E EXECUTA A REMOÇÃO MANUAL DA PUNIÇÃO ESCOLHIDA
+// Esta interação ainda pertence à mensagem efêmera (não ao painel), então
+// update() aqui é seguro — só fecha o fluxo efêmero com a confirmação final.
 // ─────────────────────────────────────────────────────────────────────────────
 async function handleConfirmarRemocaoPunicao(interaction, userId, punicaoId) {
   const punicao = await prisma.punicao.findUnique({ where: { id: punicaoId } });
@@ -226,11 +246,19 @@ async function handleConfirmarRemocaoPunicao(interaction, userId, punicaoId) {
     });
   }
 
-  // Responde com uma mensagem própria, sem tocar na mensagem do painel/select original.
-  await interaction.deferReply({ ephemeral: true });
+  // Atualiza a MESMA mensagem efêmera (não o painel) com um status de carregamento.
+  await interaction.update({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(config.cores.info)
+        .setDescription(`⏳ Removendo punição de <@${userId}>...`),
+    ],
+    components: [],
+  });
 
   await punicaoScheduler.removerPunicao(interaction.client, punicao, 'REMOVIDA_MANUAL', interaction.user.id);
 
+  // Resultado final, editando a mesma mensagem efêmera via webhook da interação.
   await interaction.editReply({
     embeds: [
       new EmbedBuilder()
@@ -244,6 +272,7 @@ async function handleConfirmarRemocaoPunicao(interaction, userId, punicaoId) {
           `${SEPARADOR}`
         ),
     ],
+    components: [],
   });
 }
 
