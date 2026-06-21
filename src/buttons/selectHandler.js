@@ -212,6 +212,9 @@ async function handleRemoverPunicaoUsuarioSelecionado(interaction, userId) {
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIRMA E EXECUTA A REMOÇÃO MANUAL DA PUNIÇÃO ESCOLHIDA
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIRMA E EXECUTA A REMOÇÃO MANUAL DA PUNIÇÃO ESCOLHIDA
+// ─────────────────────────────────────────────────────────────────────────────
 async function handleConfirmarRemocaoPunicao(interaction, userId, punicaoId) {
   const punicao = await prisma.punicao.findUnique({ where: { id: punicaoId } });
 
@@ -225,6 +228,31 @@ async function handleConfirmarRemocaoPunicao(interaction, userId, punicaoId) {
       components: [],
     });
   }
+
+  // Responde de imediato (defer) sem tocar na mensagem do painel.
+  await interaction.deferReply({ ephemeral: true });
+
+  await punicaoScheduler.removerPunicao(interaction.client, punicao, 'REMOVIDA_MANUAL', interaction.user.id);
+
+  // Confirmação vai numa resposta própria, não mexe no painel.
+  await interaction.editReply({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(config.cores.sucesso)
+        .setAuthor({ name: '✅  PUNIÇÃO REMOVIDA  ·  FDN' })
+        .setDescription(
+          `${SEPARADOR}\n\n` +
+          `**👤  Membro:** <@${userId}>\n` +
+          `**⚖️  Punição:** ${LABELS_PUNICAO[punicao.tipo] ?? punicao.tipo}\n` +
+          `**📌  Motivo original:** ${punicao.motivo}\n\n` +
+          `${SEPARADOR}`
+        ),
+    ],
+  });
+
+  // Painel volta para o select de "escolher outro membro", continua intacto e funcional.
+  await interaction.editReply.bind(interaction); // no-op guard, remover se não precisar
+}
 
   await interaction.update({
     embeds: [
@@ -248,7 +276,7 @@ async function handleConfirmarRemocaoPunicao(interaction, userId, punicaoId) {
     ],
     ephemeral: true,
   });
-}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MEMBRO SELECIONADO
