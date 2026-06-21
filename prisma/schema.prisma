@@ -145,10 +145,16 @@ model Exoneracao {
   @@map("exoneracoes")
 }
 
+// ─────────────────────────────────────────────────────────────────
+// ALTERAÇÃO NO MODEL Transferencia — apenas o campo novo foi adicionado
+// ─────────────────────────────────────────────────────────────────
+
 model Transferencia {
   id           Int      @id @default(autoincrement())
   usuario      String
+  id_gamer     String   // NOVO — ID na cidade informado na solicitação
   faccao_atual String
+  cargo_antigo String   // NOVO — cargo que o membro tinha na facção de origem
   motivo       String
   status       String   @default("PENDENTE")
   responsavel  String?
@@ -158,6 +164,8 @@ model Transferencia {
 
   @@map("transferencias")
 }
+
+
 
 model Candidatura {
   id           Int      @id @default(autoincrement())

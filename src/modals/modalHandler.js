@@ -217,14 +217,22 @@ async function handleCandidatura(interaction) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TRANSFERÊNCIA
-// ─────────────────────────────────────────────────────────────────────────────
+
 async function handleTransferencia(interaction) {
   const { user } = interaction;
   const nome         = interaction.fields.getTextInputValue('nome').trim();
+  const id_gamer     = interaction.fields.getTextInputValue('id_gamer').trim();
   const faccao_atual = interaction.fields.getTextInputValue('faccao_atual').trim();
+  const cargo_antigo = interaction.fields.getTextInputValue('cargo_antigo').trim();
   const motivo       = interaction.fields.getTextInputValue('motivo').trim();
+
+  if (!/^\d+$/.test(id_gamer)) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder().setColor(config.cores.erro)
+        .setDescription('❌ O campo **ID na cidade** deve conter apenas números.')],
+      ephemeral: true,
+    });
+  }
 
   const registrado = await prisma.usuario.findUnique({ where: { discord_id: user.id } });
   if (!registrado) {
@@ -235,11 +243,23 @@ async function handleTransferencia(interaction) {
     });
   }
 
+  // Bloqueia nova solicitação enquanto já existir uma pendente do mesmo usuário.
+  const pendente = await prisma.transferencia.findFirst({
+    where: { usuario: user.id, status: 'PENDENTE' },
+  });
+  if (pendente) {
+    return interaction.reply({
+      embeds: [new EmbedBuilder().setColor(config.cores.aviso)
+        .setDescription('⚠️ Você já possui uma solicitação de transferência em análise. Aguarde o resultado antes de abrir outra.')],
+      ephemeral: true,
+    });
+  }
+
   const transfer = await prisma.transferencia.create({
-    data: { usuario: user.id, faccao_atual, motivo },
+    data: { usuario: user.id, id_gamer, faccao_atual, cargo_antigo, motivo },
   });
 
-  const canalId = config.canais.analise;
+  const canalId = config.canais.analiseTransferencia;
   if (!canalId.startsWith('ID_')) {
     const canal = await interaction.client.channels.fetch(canalId).catch(() => null);
     if (canal) {
@@ -252,7 +272,9 @@ async function handleTransferencia(interaction) {
               `${SEPARADOR}\n\n` +
               `**👤  Discord:** <@${user.id}>\n` +
               `**🎮  Nome MTA:** \`${nome}\`\n` +
-              `**🏴  Facção atual:** \`${faccao_atual}\`\n\n` +
+              `**🆔  ID na cidade:** \`${id_gamer}\`\n` +
+              `**🏴  Facção atual:** \`${faccao_atual}\`\n` +
+              `**🏅  Cargo na facção atual:** \`${cargo_antigo}\`\n\n` +
               `**💬  Motivo:**\n${motivo}\n\n` +
               `${SEPARADOR}`
             )

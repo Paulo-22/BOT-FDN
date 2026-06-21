@@ -54,7 +54,11 @@ function modalTransferencia() {
     .setTitle('🔄 Transferência — FDN')
     .addComponents(
       row(input('nome', 'Nome no MTA', TextInputStyle.Short, true, 50)),
+      row(input('id_gamer', 'ID na cidade', TextInputStyle.Short, true, 10)
+        .setPlaceholder('Ex: 12345')),
       row(input('faccao_atual', 'Facção atual', TextInputStyle.Short, true, 50)),
+      row(input('cargo_antigo', 'Cargo na facção atual', TextInputStyle.Short, true, 50)
+        .setPlaceholder('Ex: Soldado, Gerente, etc.')),
       row(input('motivo', 'Motivo da transferência', TextInputStyle.Paragraph, true, 500)),
     );
 }

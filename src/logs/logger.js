@@ -211,6 +211,30 @@ async function logExoneracao(client, dados) {
 
   await enviarLog(client, 'exoneracoes', embed);
 }
+async function logTransferencia(client, transferencia, acao, responsavel) {
+  const aprovado = acao === 'APROVADA';
+  const ts = Math.floor(Date.now() / 1000);
+ 
+  const embed = new EmbedBuilder()
+    .setColor(aprovado ? config.cores.sucesso : config.cores.erro)
+    .setAuthor({ name: `${aprovado ? '✅' : '❌'}  TRANSFERÊNCIA ${acao}  ·  FDN` })
+    .setDescription(
+      `${SEPARADOR}\n\n` +
+      `**👤  Membro:** <@${transferencia.usuario}>\n` +
+      `**🆔  ID na cidade:** \`${transferencia.id_gamer}\`\n` +
+      `**🏴  Facção de origem:** \`${transferencia.faccao_atual}\`\n` +
+      `**🏅  Cargo na facção de origem:** \`${transferencia.cargo_antigo}\`\n` +
+      `**📝  Motivo:** ${transferencia.motivo}\n` +
+      `**📋  Status:** \`${acao}\`\n` +
+      `**🛡️  Responsável:** <@${responsavel}>\n` +
+      `**📅  Data:** <t:${ts}:F>\n\n` +
+      `${SEPARADOR}`
+    )
+    .setFooter({ text: 'FDN — Sistema de Transferências' })
+    .setTimestamp();
+ 
+  await enviarLog(client, 'transferencias', embed);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUSÊNCIA

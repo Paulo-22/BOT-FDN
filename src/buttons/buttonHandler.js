@@ -474,16 +474,59 @@ async function handleReprovarAusencia(interaction, id) {
   return interaction.update({ components: disableRow('❌  Reprovada', ButtonStyle.Danger) });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TRANSFERÊNCIA
-// ─────────────────────────────────────────────────────────────────────────────
 async function handleAprovarTransfer(interaction, id) {
-  await prisma.transferencia.update({ where: { id: parseInt(id) }, data: { status: 'APROVADA', responsavel: interaction.user.id } });
+  const transfer = await prisma.transferencia.findUnique({ where: { id: parseInt(id) } });
+  if (!transfer) {
+    return interaction.reply({ content: '❌ Solicitação de transferência não encontrada.', ephemeral: true });
+  }
+ 
+  await prisma.transferencia.update({
+    where: { id: transfer.id },
+    data: { status: 'APROVADA', responsavel: interaction.user.id },
+  });
+ 
+  const membro = await interaction.guild.members.fetch(transfer.usuario).catch(() => null);
+  if (membro) {
+    const cargoId = config.cargos.transferido;
+    if (cargoId && !cargoId.startsWith('ID_')) await membro.roles.add(cargoId).catch(() => {});
+  }
+ 
+  membro?.send({
+    embeds: [new EmbedBuilder().setColor(config.cores.sucesso)
+      .setTitle('✅ Transferência Aprovada!')
+      .setDescription(
+        `Parabéns! Sua solicitação de transferência para a **FDN** foi **aprovada**! Bem-vindo à família! 🎉\n\n` +
+        `**Cargo de origem:** \`${transfer.cargo_antigo}\` (${transfer.faccao_atual})`
+      )
+      .setTimestamp()],
+  }).catch(() => {});
+ 
+  await logger.logTransferencia(interaction.client, transfer, 'APROVADA', interaction.user.id);
+ 
   return interaction.update({ components: disableRow('✅  Aprovada', ButtonStyle.Success) });
 }
-
+ 
 async function handleReprovarTransfer(interaction, id) {
-  await prisma.transferencia.update({ where: { id: parseInt(id) }, data: { status: 'REPROVADA', responsavel: interaction.user.id } });
+  const transfer = await prisma.transferencia.findUnique({ where: { id: parseInt(id) } });
+  if (!transfer) {
+    return interaction.reply({ content: '❌ Solicitação de transferência não encontrada.', ephemeral: true });
+  }
+ 
+  await prisma.transferencia.update({
+    where: { id: transfer.id },
+    data: { status: 'REPROVADA', responsavel: interaction.user.id },
+  });
+ 
+  const membro = await interaction.guild.members.fetch(transfer.usuario).catch(() => null);
+  membro?.send({
+    embeds: [new EmbedBuilder().setColor(config.cores.erro)
+      .setTitle('❌ Transferência Reprovada')
+      .setDescription('Sua solicitação de transferência para a **FDN** foi **reprovada** desta vez. Tente novamente mais tarde.')
+      .setTimestamp()],
+  }).catch(() => {});
+ 
+  await logger.logTransferencia(interaction.client, transfer, 'REPROVADA', interaction.user.id);
+ 
   return interaction.update({ components: disableRow('❌  Reprovada', ButtonStyle.Danger) });
 }
 

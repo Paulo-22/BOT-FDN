@@ -57,6 +57,10 @@ module.exports = {
     exonerado: '1265868381962108961',
     semCargo:  '1265868402178920559',
 
+    // Cargo aplicado ao membro quando uma solicitação de TRANSFERÊNCIA é aprovada.
+    // Troque pelo ID real do cargo de "Transferido" no servidor.
+    transferido: '1265868387985260737',
+
     // Cargos aplicados pelo sistema de punição.
     // REMOCAO não está aqui: ela reaproveita o cargo `exonerado` acima.
     // Substitua os valores 'ID_PUNICAO_X' pelos IDs reais dos cargos no servidor.
@@ -90,6 +94,12 @@ module.exports = {
     registro:         '1389278353143369818',
     recrutamento:     '1389279188724224062',
     analise:          '1515128153721274550',
+
+    // Canal de análise EXCLUSIVO para solicitações de transferência
+    // (separado do canal de análise de candidatura/edital).
+    // Troque pelo ID real do canal.
+    analiseTransferencia: '1265868625315762287',
+
     batePonto:        '1304235934073749644',
     ausencias:        '1304237408425873488',
     adminPanel:       '1265868552099991608',
@@ -123,6 +133,10 @@ module.exports = {
       batePonto:     '1389278729120776192',
       punicoes:      '1265868580747219046',
       punicoesRemovidas: '1515127418145476629', // canal exclusivo para punições removidas (expiradas ou manuais) — troque pelo ID real do canal
+
+      // Canal exclusivo para log de transferências aprovadas/reprovadas.
+      // Troque pelo ID real do canal.
+      transferencias: '1518327752451821658',
     },
   },
 
