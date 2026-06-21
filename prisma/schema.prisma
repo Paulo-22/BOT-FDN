@@ -94,6 +94,7 @@ model Punicao {
   expira_em     DateTime? // null = sem expiração / permanente
   status        String    @default("ATIVA") // ATIVA, EXPIRADA, REMOVIDA_MANUAL
   removida_em   DateTime?
+  removido_por  String?   // discord_id de quem removeu manualmente (null se expirou automaticamente)
 
   user Usuario @relation("UsuarioPunido",      fields: [usuario],     references: [discord_id])
   resp Usuario @relation("ResponsavelPunicao", fields: [responsavel], references: [discord_id])

@@ -121,6 +121,29 @@ async function handleVoltarSelect(interaction) {
     });
   }
 
+  if (resto === 'remover_punicao') {
+    return interaction.update({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(config.cores.info)
+          .setAuthor({ name: '🔄  REMOVER PUNIÇÃO  ·  FDN' })
+          .setDescription(
+            `${SEPARADOR}\n\n` +
+            `Selecione o **membro** para ver as punições ativas:\n\n` +
+            `${SEPARADOR}`
+          ),
+      ],
+      components: [
+        new ActionRowBuilder().addComponents(
+          new UserSelectMenuBuilder()
+            .setCustomId('userselect_remover_punicao')
+            .setPlaceholder('Selecione o membro...')
+            .setMinValues(1).setMaxValues(1),
+        ),
+      ],
+    });
+  }
+
   const info = TITULOS_USER_SELECT[resto];
   if (!info) {
     return interaction.update({

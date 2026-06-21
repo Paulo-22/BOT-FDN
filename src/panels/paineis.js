@@ -227,7 +227,8 @@ function painelPunicao() {
       '**Punição 1:** aplica o primeiro cargo de punição.\n' +
       '**Punição 2:** aplica o segundo cargo de punição.\n' +
       '**Punição 3:** aplica o terceiro cargo de punição.\n' +
-      '**Remoção:** remove os cargos do membro e aplica o cargo de removido.'
+      '**Remoção:** remove os cargos do membro e aplica o cargo de removido.\n' +
+      '**Remover Punição:** retira uma punição ativa de um membro antes do prazo.'
     )
     .setImage(BANNER_PUNICAO);
 
@@ -239,6 +240,7 @@ function painelPunicao() {
       { label: 'Punição 2', value: 'PUNICAO_2', description: 'Aplica o 2º cargo de punição' },
       { label: 'Punição 3', value: 'PUNICAO_3', description: 'Aplica o 3º cargo de punição' },
       { label: 'Remoção',   value: 'REMOCAO',   description: 'Remove o membro da facção' },
+      { label: 'Remover Punição', value: 'REMOVER', description: 'Retira uma punição ativa de um membro' },
     ]);
 
   return { embeds: [embed], components: [new ActionRowBuilder().addComponents(menu)] };

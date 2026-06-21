@@ -1,4 +1,3 @@
-
 // Verifica periodicamente punições temporárias expiradas e remove o cargo automaticamente.
 
 const config     = require('../config');
@@ -30,8 +29,10 @@ async function processarExpiracoes(client) {
 /**
  * Remove o cargo de punição do membro no Discord e atualiza o registro no banco.
  * `motivoStatus` é 'EXPIRADA' (automático) ou 'REMOVIDA_MANUAL' (admin removeu antes do prazo).
+ * `responsavelId` só é usado quando motivoStatus === 'REMOVIDA_MANUAL' — é o discord_id
+ * de quem removeu a punição pelo painel.
  */
-async function removerPunicao(client, punicao, motivoStatus = 'EXPIRADA') {
+async function removerPunicao(client, punicao, motivoStatus = 'EXPIRADA', responsavelId = null) {
   try {
     const guildId = config.guildId;
     let membro = null;
@@ -42,6 +43,8 @@ async function removerPunicao(client, punicao, motivoStatus = 'EXPIRADA') {
       const guild = await client.guilds.fetch(guildId).catch(() => null);
       membro = guild ? await guild.members.fetch(punicao.usuario).catch(() => null) : null;
     }
+
+    const removidaManualmente = motivoStatus === 'REMOVIDA_MANUAL';
 
     if (membro) {
       const cargoId = config.cargos.punicao[punicao.tipo];
@@ -54,9 +57,11 @@ async function removerPunicao(client, punicao, motivoStatus = 'EXPIRADA') {
           {
             color: config.cores.sucesso,
             title: '✅ Punição removida',
-            description:
-              `Sua punição (**${punicao.tipo}**) expirou e o cargo foi removido automaticamente.\n` +
-              `**Motivo original:** ${punicao.motivo}`,
+            description: removidaManualmente
+              ? `Sua punição (**${punicao.tipo}**) foi removida manualmente pela equipe, antes do prazo original.\n` +
+                `**Motivo original:** ${punicao.motivo}`
+              : `Sua punição (**${punicao.tipo}**) expirou e o cargo foi removido automaticamente.\n` +
+                `**Motivo original:** ${punicao.motivo}`,
             timestamp: new Date().toISOString(),
           },
         ],
@@ -65,10 +70,18 @@ async function removerPunicao(client, punicao, motivoStatus = 'EXPIRADA') {
 
     await prisma.punicao.update({
       where: { id: punicao.id },
-      data: { status: motivoStatus, removida_em: new Date() },
+      data: {
+        status: motivoStatus,
+        removida_em: new Date(),
+        removido_por: removidaManualmente ? responsavelId : null,
+      },
     });
 
-    await logger.logPunicaoExpirada(client, punicao);
+    if (removidaManualmente) {
+      await logger.logPunicaoRemovidaManual(client, punicao, responsavelId);
+    } else {
+      await logger.logPunicaoExpirada(client, punicao);
+    }
   } catch (err) {
     console.error(`[PUNICAO SCHEDULER] Erro ao processar punição #${punicao.id}:`, err.message);
   }

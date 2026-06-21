@@ -1,4 +1,3 @@
-
 // Configuração central do bot FDN
 
 module.exports = {
@@ -123,6 +122,7 @@ module.exports = {
       tickets:       '1515124815042711732',
       batePonto:     '1389278729120776192',
       punicoes:      '1265868580747219046',
+      punicoesRemovidas: '1515127418145476629', // canal exclusivo para punições removidas (expiradas ou manuais) — troque pelo ID real do canal
     },
   },
 

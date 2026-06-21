@@ -3,16 +3,18 @@ const {
   ActionRowBuilder,
   RoleSelectMenuBuilder,
   UserSelectMenuBuilder,
+  StringSelectMenuBuilder,
   ButtonBuilder,
   ButtonStyle,
 } = require('discord.js');
 
-const config       = require('../config');
-const modals       = require('../modals/modals');
-const perm         = require('../utils/permissoes');
-const { prisma }   = require('../database/client');
-const horasService = require('../services/horasService');
-const logger       = require('../logs/logger');
+const config          = require('../config');
+const modals          = require('../modals/modals');
+const perm            = require('../utils/permissoes');
+const { prisma }      = require('../database/client');
+const horasService    = require('../services/horasService');
+const punicaoScheduler = require('../services/punicaoScheduler');
+const logger          = require('../logs/logger');
 
 const SEPARADOR = '▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬';
 
@@ -57,7 +59,31 @@ async function handleSelect(interaction) {
       if (!perm.podeAdvertir(interaction.member))
         return interaction.reply({ content: '❌ Sem permissão.', ephemeral: true });
 
-      const tipo  = values[0];
+      const tipo = values[0];
+
+      if (tipo === 'REMOVER') {
+        return interaction.update({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(config.cores.info)
+              .setAuthor({ name: '🔄  REMOVER PUNIÇÃO  ·  FDN' })
+              .setDescription(
+                `${SEPARADOR}\n\n` +
+                `Selecione o **membro** para ver as punições ativas:\n\n` +
+                `${SEPARADOR}`
+              ),
+          ],
+          components: [
+            new ActionRowBuilder().addComponents(
+              new UserSelectMenuBuilder()
+                .setCustomId('userselect_remover_punicao')
+                .setPlaceholder('Selecione o membro...')
+                .setMinValues(1).setMaxValues(1),
+            ),
+          ],
+        });
+      }
+
       const label = LABELS_PUNICAO[tipo] ?? 'Punição';
 
       return interaction.update({
@@ -85,6 +111,14 @@ async function handleSelect(interaction) {
     if (customId.startsWith('userselect_punicao_')) {
       const tipo = customId.replace('userselect_punicao_', '');
       return handlePunicaoUsuarioSelecionado(interaction, tipo, values[0]);
+    }
+
+    if (customId === 'userselect_remover_punicao')
+      return handleRemoverPunicaoUsuarioSelecionado(interaction, values[0]);
+
+    if (customId.startsWith('select_remover_punicao_')) {
+      const userId = customId.replace('select_remover_punicao_', '');
+      return handleConfirmarRemocaoPunicao(interaction, userId, parseInt(values[0], 10));
     }
 
     if (customId.startsWith('userselect_'))
@@ -116,6 +150,104 @@ async function handlePunicaoUsuarioSelecionado(interaction, tipo, userId) {
   }
 
   return interaction.showModal(modals.modalMotivoPunicao(tipo, userId));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MEMBRO SELECIONADO PARA REMOVER PUNIÇÃO — lista as punições ativas
+// ─────────────────────────────────────────────────────────────────────────────
+async function handleRemoverPunicaoUsuarioSelecionado(interaction, userId) {
+  const ativas = await prisma.punicao.findMany({
+    where: { usuario: userId, status: 'ATIVA' },
+    orderBy: { data: 'desc' },
+  });
+
+  const membro = await interaction.guild.members.fetch(userId).catch(() => null);
+  const nome   = membro?.displayName ?? `<@${userId}>`;
+
+  if (!ativas.length) {
+    return interaction.update({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(config.cores.aviso)
+          .setDescription(`⚠️ **${nome}** não possui nenhuma punição ativa no momento.`),
+      ],
+      components: [
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId('btn_voltar_select_remover_punicao')
+            .setLabel('🔄  Selecionar outro membro')
+            .setStyle(ButtonStyle.Secondary),
+        ),
+      ],
+    });
+  }
+
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId(`select_remover_punicao_${userId}`)
+    .setPlaceholder('Selecione a punição para remover...')
+    .addOptions(
+      ativas.slice(0, 25).map(p => ({
+        label: `${LABELS_PUNICAO[p.tipo] ?? p.tipo} — #${p.id}`,
+        value: String(p.id),
+        description: p.motivo.slice(0, 90),
+      })),
+    );
+
+  return interaction.update({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(config.cores.info)
+        .setAuthor({ name: '🔄  REMOVER PUNIÇÃO  ·  FDN' })
+        .setDescription(
+          `${SEPARADOR}\n\n` +
+          `**👤  Membro:** ${nome}\n\n` +
+          `Selecione abaixo a punição ativa que deseja remover:\n\n` +
+          `${SEPARADOR}`
+        ),
+    ],
+    components: [new ActionRowBuilder().addComponents(menu)],
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIRMA E EXECUTA A REMOÇÃO MANUAL DA PUNIÇÃO ESCOLHIDA
+// ─────────────────────────────────────────────────────────────────────────────
+async function handleConfirmarRemocaoPunicao(interaction, userId, punicaoId) {
+  const punicao = await prisma.punicao.findUnique({ where: { id: punicaoId } });
+
+  if (!punicao || punicao.status !== 'ATIVA') {
+    return interaction.update({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(config.cores.aviso)
+          .setDescription('⚠️ Essa punição já não está mais ativa — alguém pode ter removido ela antes de você.'),
+      ],
+      components: [],
+    });
+  }
+
+  await interaction.update({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(config.cores.info)
+        .setDescription(`⏳ Removendo punição de <@${userId}>...`),
+    ],
+    components: [],
+  });
+
+  await punicaoScheduler.removerPunicao(interaction.client, punicao, 'REMOVIDA_MANUAL', interaction.user.id);
+
+  return interaction.followUp({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(config.cores.sucesso)
+        .setDescription(
+          `✅ Punição **${LABELS_PUNICAO[punicao.tipo] ?? punicao.tipo}** de <@${userId}> foi removida.\n` +
+          `**Motivo original:** ${punicao.motivo}`
+        ),
+    ],
+    ephemeral: true,
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-// src/logs/logger.js
+
 // Sistema centralizado de logs — FDN (redesenhado)
 
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -377,7 +377,38 @@ async function logPunicaoExpirada(client, punicao) {
     .setFooter({ text: 'FDN — Sistema de Punições' })
     .setTimestamp();
 
-  await enviarLog(client, 'punicoes', embed);
+  await enviarLog(client, 'punicoesRemovidas', embed);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUNIÇÃO REMOVIDA MANUALMENTE (admin removeu antes do prazo, via painel)
+// ─────────────────────────────────────────────────────────────────────────────
+async function logPunicaoRemovidaManual(client, punicao, responsavelId) {
+  const labels = {
+    PUNICAO_1: '⚠️  Punição Nível 1',
+    PUNICAO_2: '🔶  Punição Nível 2',
+    PUNICAO_3: '🔴  Punição Nível 3',
+    REMOCAO:   '🚫  Remoção',
+  };
+  const ts = Math.floor(Date.now() / 1000);
+
+  const embed = new EmbedBuilder()
+    .setColor(config.cores.info)
+    .setAuthor({ name: `🔄  PUNIÇÃO REMOVIDA MANUALMENTE  ·  FDN` })
+    .setDescription(
+      `${SEPARADOR}\n\n` +
+      `**👤  Membro:** <@${punicao.usuario}>\n` +
+      `**⚖️  Tipo:** \`${labels[punicao.tipo] ?? punicao.tipo}\`\n` +
+      `**📝  Motivo original:** ${punicao.motivo}\n` +
+      `> O cargo de punição foi **removido manualmente**, antes do prazo original.\n\n` +
+      `**🛡️  Removido por:** <@${responsavelId}>\n` +
+      `**📅  Removida em:** <t:${ts}:F>\n\n` +
+      `${SEPARADOR}`
+    )
+    .setFooter({ text: 'FDN — Sistema de Punições' })
+    .setTimestamp();
+
+  await enviarLog(client, 'punicoesRemovidas', embed);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -402,5 +433,6 @@ module.exports = {
   logBatePonto,
   logPunicao,
   logPunicaoExpirada,
+  logPunicaoRemovidaManual,
   formatarTempo,
 };
